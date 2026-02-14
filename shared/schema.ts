@@ -9,6 +9,7 @@ import { z } from "zod";
 export const ingredients = pgTable("ingredients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  brand: text("brand"), // 브랜드 필드 추가
   unit: text("unit").notNull(), // e.g., kg, g, box, ea
   currentStock: integer("current_stock").notNull().default(0),
   minStockLevel: integer("min_stock_level").notNull().default(10), // Low stock alert threshold

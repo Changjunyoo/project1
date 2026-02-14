@@ -19,7 +19,7 @@ export function StatusBadge({ current, min }: StatusBadgeProps) {
       )}
     >
       {isLow ? <AlertCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-      {isLow ? "Low Stock" : "In Stock"}
+      {isLow ? "재고 부족" : "정상 재고"}
     </div>
   );
 }

@@ -75,7 +75,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
           }
         >
           {type === "IN" ? <ArrowDownToLine className="w-4 h-4 mr-2" /> : <ArrowUpFromLine className="w-4 h-4 mr-2" />}
-          {type === "IN" ? "Restock (IN)" : "Use Stock (OUT)"}
+          {type === "IN" ? "입고" : "출고"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -90,7 +90,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                 <ArrowUpFromLine className="w-5 h-5" />
               </div>
             )}
-            {type === "IN" ? "Record Incoming Stock" : "Record Stock Usage"}
+            {type === "IN" ? "재고 입고 기록" : "재고 출고 기록"}
           </DialogTitle>
         </DialogHeader>
 
@@ -102,7 +102,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
               name="ingredientId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ingredient</FormLabel>
+                  <FormLabel>식자재</FormLabel>
                   <Select 
                     onValueChange={(val) => field.onChange(parseInt(val))} 
                     defaultValue={field.value?.toString()}
@@ -110,13 +110,13 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select ingredient" />
+                        <SelectValue placeholder="식자재 선택" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {ingredients?.map((ing) => (
                         <SelectItem key={ing.id} value={ing.id.toString()}>
-                          {ing.name} (Current: {ing.currentStock} {ing.unit})
+                          {ing.name} (현재: {ing.currentStock} {ing.unit})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -132,7 +132,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                 name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Quantity {selectedIngredient && `(${selectedIngredient.unit})`}</FormLabel>
+                    <FormLabel>수량 {selectedIngredient && `(${selectedIngredient.unit})`}</FormLabel>
                     <FormControl>
                       <Input type="number" min="1" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
                     </FormControl>
@@ -147,7 +147,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                   name="unitPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit Price (₩)</FormLabel>
+                      <FormLabel>단가 (₩)</FormLabel>
                       <FormControl>
                         <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
                       </FormControl>
@@ -164,9 +164,9 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                 name="destination"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Destination / Branch</FormLabel>
+                    <FormLabel>출고처 / 지점</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Kitchen A, Gangnam Branch" {...field} />
+                      <Input placeholder="예: 주방 A, 강남점" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -177,7 +177,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isPending} className={type === "IN" ? "bg-green-600 hover:bg-green-700" : "bg-orange-600 hover:bg-orange-700"}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Confirm Transaction
+                기록 완료
               </Button>
             </div>
           </form>

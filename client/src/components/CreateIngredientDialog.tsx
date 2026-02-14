@@ -32,6 +32,7 @@ export function CreateIngredientDialog() {
     resolver: zodResolver(insertIngredientSchema),
     defaultValues: {
       name: "",
+      brand: "",
       unit: "kg",
       minStockLevel: 10,
     },
@@ -52,14 +53,14 @@ export function CreateIngredientDialog() {
       <DialogTrigger asChild>
         <Button className="bg-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all">
           <Plus className="w-4 h-4 mr-2" />
-          Add Ingredient
+          식자재 추가
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Ingredient</DialogTitle>
+          <DialogTitle>새 식자재 등록</DialogTitle>
           <DialogDescription>
-            Define a new ingredient to track in your inventory.
+            재고 관리를 위한 새로운 식자재를 등록합니다.
           </DialogDescription>
         </DialogHeader>
 
@@ -70,9 +71,23 @@ export function CreateIngredientDialog() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>품목명</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Premium Beef Ribs" {...field} />
+                    <Input placeholder="예: 소고기 등심" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>브랜드</FormLabel>
+                  <FormControl>
+                    <Input placeholder="예: CJ제일제당" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -85,9 +100,9 @@ export function CreateIngredientDialog() {
                 name="unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Unit</FormLabel>
+                    <FormLabel>단위</FormLabel>
                     <FormControl>
-                      <Input placeholder="kg, box, ea..." {...field} />
+                      <Input placeholder="kg, 박스, 개..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -99,7 +114,7 @@ export function CreateIngredientDialog() {
                 name="minStockLevel"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Min Stock Alert</FormLabel>
+                    <FormLabel>최소 재고 알림 기준</FormLabel>
                     <FormControl>
                       <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
                     </FormControl>
@@ -112,7 +127,7 @@ export function CreateIngredientDialog() {
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Ingredient
+                식자재 등록
               </Button>
             </div>
           </form>

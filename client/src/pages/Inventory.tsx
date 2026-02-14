@@ -41,8 +41,8 @@ export default function Inventory() {
       <main className="flex-1 ml-64 p-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
-            <p className="text-muted-foreground mt-1">Manage your ingredients and stock levels.</p>
+            <h1 className="text-3xl font-bold text-foreground">식자재 관리</h1>
+            <p className="text-muted-foreground mt-1">식자재 품목과 재고 수준을 관리합니다.</p>
           </div>
           <div className="flex items-center gap-3">
             <TransactionForm type="OUT" />
@@ -57,7 +57,7 @@ export default function Inventory() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input 
-                placeholder="Search ingredients..." 
+                placeholder="식자재 검색..." 
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -70,22 +70,23 @@ export default function Inventory() {
             <table className="w-full text-sm text-left">
               <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
                 <tr>
-                  <th className="px-6 py-4">Name</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Current Stock</th>
-                  <th className="px-6 py-4">Unit</th>
-                  <th className="px-6 py-4">Min. Level</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-6 py-4">품목명</th>
+                  <th className="px-6 py-4">브랜드</th>
+                  <th className="px-6 py-4">상태</th>
+                  <th className="px-6 py-4">현재 재고</th>
+                  <th className="px-6 py-4">단위</th>
+                  <th className="px-6 py-4">최소 재고</th>
+                  <th className="px-6 py-4 text-right">작업</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">Loading inventory...</td>
+                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">식자재 목록을 불러오는 중...</td>
                   </tr>
                 ) : filteredIngredients?.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">No ingredients found.</td>
+                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">검색 결과가 없습니다.</td>
                   </tr>
                 ) : (
                   filteredIngredients?.map((item) => (
@@ -95,6 +96,7 @@ export default function Inventory() {
                           {item.name}
                         </Link>
                       </td>
+                      <td className="px-6 py-4 text-muted-foreground">{item.brand || "-"}</td>
                       <td className="px-6 py-4">
                         <StatusBadge current={item.currentStock} min={item.minStockLevel} />
                       </td>
@@ -112,7 +114,7 @@ export default function Inventory() {
                             <Link href={`/inventory/${item.id}`}>
                               <DropdownMenuItem className="cursor-pointer">
                                 <History className="w-4 h-4 mr-2" />
-                                View History
+                                히스토리 보기
                               </DropdownMenuItem>
                             </Link>
                             <DropdownMenuItem 
@@ -120,7 +122,7 @@ export default function Inventory() {
                               onSelect={() => setDeleteId(item.id)}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
+                              삭제
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -137,13 +139,13 @@ export default function Inventory() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this ingredient and all its transaction history. This action cannot be undone.
+              이 작업은 해당 식자재와 모든 입출고 내역을 영구적으로 삭제합니다. 삭제 후에는 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction 
               className="bg-red-600 hover:bg-red-700 text-white"
               onClick={() => {
@@ -151,7 +153,7 @@ export default function Inventory() {
                 setDeleteId(null);
               }}
             >
-              Delete
+              삭제
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

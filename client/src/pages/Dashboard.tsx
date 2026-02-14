@@ -47,42 +47,42 @@ export default function Dashboard() {
       <Sidebar />
       <main className="flex-1 ml-64 p-8">
         <header className="mb-8 animate-enter">
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Overview of your inventory status and recent activity.</p>
+          <h1 className="text-3xl font-bold text-foreground">대시보드</h1>
+          <p className="text-muted-foreground mt-2">재고 상태 및 최근 활동 요약입니다.</p>
         </header>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-enter" style={{ animationDelay: "100ms" }}>
           <Card className="card-hover">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Ingredients</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">전체 식자재</CardTitle>
               <Package className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalIngredients}</div>
-              <p className="text-xs text-muted-foreground mt-1">Active items in inventory</p>
+              <p className="text-xs text-muted-foreground mt-1">등록된 품목 수</p>
             </CardContent>
           </Card>
 
           <Card className="card-hover border-orange-200 bg-orange-50/30 dark:bg-orange-900/10">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-orange-600 dark:text-orange-400">Low Stock Alerts</CardTitle>
+              <CardTitle className="text-sm font-medium text-orange-600 dark:text-orange-400">재고 부족 알림</CardTitle>
               <AlertTriangle className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-700 dark:text-orange-400">{lowStockItems.length}</div>
-              <p className="text-xs text-orange-600/80 dark:text-orange-400/80 mt-1">Items below minimum level</p>
+              <p className="text-xs text-orange-600/80 dark:text-orange-400/80 mt-1">최소 재고 미달 품목</p>
             </CardContent>
           </Card>
 
           <Card className="card-hover">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Activity</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">이달의 활동</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{transactions?.length || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Transactions recorded</p>
+              <p className="text-xs text-muted-foreground mt-1">기록된 입출고 건수</p>
             </CardContent>
           </Card>
         </div>
@@ -91,8 +91,8 @@ export default function Dashboard() {
           {/* Main Chart */}
           <Card className="lg:col-span-2 shadow-sm">
             <CardHeader>
-              <CardTitle>Highest Stock Items</CardTitle>
-              <CardDescription>Top 5 ingredients by quantity currently in stock.</CardDescription>
+              <CardTitle>보유 재고 상위 품목</CardTitle>
+              <CardDescription>현재 재고량이 가장 많은 상위 5개 품목입니다.</CardDescription>
             </CardHeader>
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -125,12 +125,12 @@ export default function Dashboard() {
           {/* Recent Activity Feed */}
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>최근 활동</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 {recentTransactions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">No recent activity.</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">최근 활동이 없습니다.</p>
                 ) : (
                   recentTransactions.map((tx) => {
                     const ingredient = ingredients?.find(i => i.id === tx.ingredientId);
@@ -141,10 +141,10 @@ export default function Dashboard() {
                         </div>
                         <div className="flex-1 space-y-1">
                           <p className="text-sm font-medium leading-none">
-                            {tx.type === 'IN' ? 'Restocked' : 'Used'} {ingredient?.name}
+                            {tx.type === 'IN' ? '입고' : '출고'}: {ingredient?.name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {tx.quantity} {ingredient?.unit} • {formatDistanceToNow(new Date(tx.createdAt!), { addSuffix: true })}
+                            {tx.quantity} {ingredient?.unit} • {formatDistanceToNow(new Date(tx.createdAt!), { addSuffix: true, locale: (window as any).dateFnsLocaleKo })}
                           </p>
                         </div>
                       </div>
@@ -161,17 +161,17 @@ export default function Dashboard() {
           <div className="mt-8 animate-enter" style={{ animationDelay: "300ms" }}>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <AlertTriangle className="text-orange-500 w-5 h-5" />
-              Low Stock Alerts
+              재고 부족 알림
             </h3>
             <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
               <table className="w-full text-sm text-left">
                 <thead className="bg-muted/50 text-muted-foreground font-medium">
                   <tr>
-                    <th className="px-6 py-4">Ingredient Name</th>
-                    <th className="px-6 py-4">Current Stock</th>
-                    <th className="px-6 py-4">Min. Required</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Action</th>
+                    <th className="px-6 py-4">품목명</th>
+                    <th className="px-6 py-4">현재 재고</th>
+                    <th className="px-6 py-4">최소 재고</th>
+                    <th className="px-6 py-4">상태</th>
+                    <th className="px-6 py-4 text-right">작업</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
