@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { CreateIngredientDialog } from "@/components/CreateIngredientDialog";
 import { EditIngredientDialog } from "@/components/EditIngredientDialog";
@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useIngredients, useDeleteIngredient } from "@/hooks/use-inventory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -23,14 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, MoreVertical, Trash2, History } from "lucide-react";
+import { Search, MoreVertical, Trash2, History, X } from "lucide-react";
 import { Link } from "wouter";
 import { INGREDIENT_CATEGORIES } from "@shared/schema";
 
@@ -39,12 +33,36 @@ export default function Inventory() {
   const { mutate: deleteIngredient } = useDeleteIngredient();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [brandFilter, setBrandFilter] = useState<string>("all");
+  const [originFilter, setOriginFilter] = useState<string>("all");
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const uniqueBrands = useMemo(() => {
+    if (!ingredients) return [];
+    const brands = [...new Set(ingredients.map(i => i.brand).filter(Boolean))] as string[];
+    return brands.sort();
+  }, [ingredients]);
+
+  const uniqueOrigins = useMemo(() => {
+    if (!ingredients) return [];
+    const origins = [...new Set(ingredients.map(i => i.origin).filter(Boolean))] as string[];
+    return origins.sort();
+  }, [ingredients]);
+
+  const activeFilterCount = [categoryFilter, brandFilter, originFilter].filter(f => f !== "all").length;
+
+  const clearAllFilters = () => {
+    setCategoryFilter("all");
+    setBrandFilter("all");
+    setOriginFilter("all");
+  };
 
   const filteredIngredients = ingredients?.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesBrand = brandFilter === "all" || item.brand === brandFilter;
+    const matchesOrigin = originFilter === "all" || item.origin === originFilter;
+    return matchesSearch && matchesCategory && matchesBrand && matchesOrigin;
   });
 
   return (
@@ -65,28 +83,130 @@ export default function Inventory() {
 
         <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
           {/* Toolbar */}
-          <div className="p-4 border-b border-border flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="식자재 검색..." 
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                data-testid="input-search"
-              />
+          <div className="p-4 border-b border-border space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  placeholder="식자재 검색..." 
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  data-testid="input-search"
+                />
+              </div>
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} data-testid="button-clear-filters">
+                  <X className="w-3 h-3 mr-1" />
+                  필터 초기화
+                </Button>
+              )}
             </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[140px]" data-testid="select-category-filter">
-                <SelectValue placeholder="전체 카테고리" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
+
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium text-muted-foreground shrink-0">카테고리</span>
+                <Button
+                  variant={categoryFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCategoryFilter("all")}
+                  data-testid="filter-category-all"
+                >
+                  전체
+                </Button>
                 {INGREDIENT_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  <Button
+                    key={cat}
+                    variant={categoryFilter === cat ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCategoryFilter(categoryFilter === cat ? "all" : cat)}
+                    data-testid={`filter-category-${cat}`}
+                  >
+                    {cat}
+                  </Button>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+
+              {uniqueBrands.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-medium text-muted-foreground shrink-0">브랜드</span>
+                  <Button
+                    variant={brandFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setBrandFilter("all")}
+                    data-testid="filter-brand-all"
+                  >
+                    전체
+                  </Button>
+                  {uniqueBrands.map((brand) => (
+                    <Button
+                      key={brand}
+                      variant={brandFilter === brand ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setBrandFilter(brandFilter === brand ? "all" : brand)}
+                      data-testid={`filter-brand-${brand}`}
+                    >
+                      {brand}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              {uniqueOrigins.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-medium text-muted-foreground shrink-0">원산지</span>
+                  <Button
+                    variant={originFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setOriginFilter("all")}
+                    data-testid="filter-origin-all"
+                  >
+                    전체
+                  </Button>
+                  {uniqueOrigins.map((origin) => (
+                    <Button
+                      key={origin}
+                      variant={originFilter === origin ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setOriginFilter(originFilter === origin ? "all" : origin)}
+                      data-testid={`filter-origin-${origin}`}
+                    >
+                      {origin}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {activeFilterCount > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground">적용된 필터:</span>
+                {categoryFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1" data-testid="active-filter-category">
+                    카테고리: {categoryFilter}
+                    <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 no-default-hover-elevate" onClick={() => setCategoryFilter("all")} data-testid="button-remove-category-filter">
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </Badge>
+                )}
+                {brandFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1" data-testid="active-filter-brand">
+                    브랜드: {brandFilter}
+                    <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 no-default-hover-elevate" onClick={() => setBrandFilter("all")} data-testid="button-remove-brand-filter">
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </Badge>
+                )}
+                {originFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1" data-testid="active-filter-origin">
+                    원산지: {originFilter}
+                    <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 no-default-hover-elevate" onClick={() => setOriginFilter("all")} data-testid="button-remove-origin-filter">
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Table */}
@@ -123,9 +243,45 @@ export default function Inventory() {
                           {item.name}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground">{item.category || "-"}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{item.brand || "-"}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{item.origin || "-"}</td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {item.category ? (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-muted-foreground"
+                            onClick={() => setCategoryFilter(item.category!)}
+                            data-testid={`cell-category-${item.id}`}
+                          >
+                            {item.category}
+                          </Button>
+                        ) : "-"}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {item.brand ? (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-muted-foreground"
+                            onClick={() => setBrandFilter(item.brand!)}
+                            data-testid={`cell-brand-${item.id}`}
+                          >
+                            {item.brand}
+                          </Button>
+                        ) : "-"}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {item.origin ? (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-muted-foreground"
+                            onClick={() => setOriginFilter(item.origin!)}
+                            data-testid={`cell-origin-${item.id}`}
+                          >
+                            {item.origin}
+                          </Button>
+                        ) : "-"}
+                      </td>
                       <td className="px-6 py-4">
                         <StatusBadge current={item.currentStock} min={item.minStockLevel} />
                       </td>
