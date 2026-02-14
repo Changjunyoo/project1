@@ -36,6 +36,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
   const [open, setOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<PickerMode>("form");
   const [searchTerm, setSearchTerm] = useState("");
+  const [ingredientSearchTerm, setIngredientSearchTerm] = useState("");
+  const [showIngredientResults, setShowIngredientResults] = useState(false);
   const { data: ingredients } = useIngredients();
   const { data: branchList } = useBranches();
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
@@ -81,6 +83,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     if (!isOpen) {
       setPickerMode("form");
       setSearchTerm("");
+      setIngredientSearchTerm("");
+      setShowIngredientResults(false);
     }
   };
 
@@ -90,6 +94,10 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
 
   const filteredIngredients = ingredients?.filter(i =>
     i.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const inlineFilteredIngredients = ingredients?.filter(i =>
+    ingredientSearchTerm && i.name.toLowerCase().includes(ingredientSearchTerm.toLowerCase())
   );
 
   const filteredBranches = branchList?.filter(b =>
@@ -196,6 +204,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
           await updateIngredient({ id: created.id, currentStock: initialStock } as any);
         }
         form.setValue("ingredientId", created.id);
+        setIngredientSearchTerm(created.name);
+        setShowIngredientResults(false);
         newIngredientForm.reset();
         setInitialStock(0);
         setPickerMode("form");
@@ -449,20 +459,85 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
               render={() => (
                 <FormItem>
                   <FormLabel>식자재</FormLabel>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-between font-normal"
-                    onClick={() => !preselectedIngredientId && setPickerMode("ingredient")}
-                    disabled={!!preselectedIngredientId}
-                    data-testid="button-open-ingredient-picker"
-                  >
-                    {selectedIngredient 
-                      ? <span>{selectedIngredient.name} <span className="text-muted-foreground">(현재: {selectedIngredient.currentStock} {selectedIngredient.unit})</span></span>
-                      : <span className="text-muted-foreground">식자재 선택</span>
-                    }
-                    <ChevronLeft className="w-4 h-4 rotate-180 text-muted-foreground" />
-                  </Button>
+                  {preselectedIngredientId ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-between font-normal"
+                      disabled
+                      data-testid="button-open-ingredient-picker"
+                    >
+                      {selectedIngredient 
+                        ? <span>{selectedIngredient.name} <span className="text-muted-foreground">(현재: {selectedIngredient.currentStock} {selectedIngredient.unit})</span></span>
+                        : <span className="text-muted-foreground">식자재 선택</span>
+                      }
+                    </Button>
+                  ) : (
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="식자재 검색..."
+                        className="pl-9"
+                        value={selectedIngredient && !showIngredientResults ? selectedIngredient.name : ingredientSearchTerm}
+                        onChange={(e) => {
+                          setIngredientSearchTerm(e.target.value);
+                          setShowIngredientResults(true);
+                          if (selectedIngredient) {
+                            form.setValue("ingredientId", undefined as any);
+                          }
+                        }}
+                        onFocus={() => {
+                          if (selectedIngredient) {
+                            setIngredientSearchTerm(selectedIngredient.name);
+                          }
+                          setShowIngredientResults(true);
+                        }}
+                        data-testid="input-ingredient-search"
+                      />
+                      {showIngredientResults && (
+                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                          {inlineFilteredIngredients && inlineFilteredIngredients.length > 0 ? (
+                            inlineFilteredIngredients.map((ing) => (
+                              <button
+                                key={ing.id}
+                                type="button"
+                                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover-elevate ${selectedIngredientId === ing.id ? "bg-primary/10 text-primary font-medium" : "text-foreground"}`}
+                                onClick={() => {
+                                  form.setValue("ingredientId", ing.id);
+                                  setIngredientSearchTerm(ing.name);
+                                  setShowIngredientResults(false);
+                                }}
+                                data-testid={`button-inline-ingredient-${ing.id}`}
+                              >
+                                <span>{ing.name} <span className="text-muted-foreground text-xs">(현재: {ing.currentStock} {ing.unit})</span></span>
+                                {selectedIngredientId === ing.id && <Check className="w-3 h-3 text-primary" />}
+                              </button>
+                            ))
+                          ) : ingredientSearchTerm ? (
+                            <div className="p-2">
+                              <p className="text-sm text-muted-foreground text-center py-1">검색 결과가 없습니다.</p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-1"
+                                onClick={() => {
+                                  setShowIngredientResults(false);
+                                  setPickerMode("newIngredient");
+                                  newIngredientForm.reset({ name: ingredientSearchTerm, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10 });
+                                  setInitialStock(0);
+                                }}
+                                data-testid="button-inline-add-ingredient"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                "{ingredientSearchTerm}" 새로 추가
+                              </Button>
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
