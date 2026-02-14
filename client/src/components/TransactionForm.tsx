@@ -44,6 +44,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
   const { mutateAsync: createIngredient, isPending: isCreatingIngredient } = useCreateIngredient();
   const { mutateAsync: updateIngredient } = useUpdateIngredient();
   const [initialStock, setInitialStock] = useState(0);
+  const [pendingIngredientName, setPendingIngredientName] = useState("");
 
   const newIngredientForm = useForm<z.infer<typeof insertIngredientSchema>>({
     resolver: zodResolver(insertIngredientSchema),
@@ -112,6 +113,13 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showIngredientResults]);
+
+  useEffect(() => {
+    if (pickerMode === "newIngredient" && pendingIngredientName) {
+      newIngredientForm.reset({ name: pendingIngredientName, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10 });
+      setPendingIngredientName("");
+    }
+  }, [pickerMode, pendingIngredientName]);
 
   const filteredBranches = branchList?.filter(b =>
     b.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -541,11 +549,10 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                                 size="sm"
                                 className="w-full mt-1"
                                 onClick={() => {
-                                  const searchVal = ingredientSearchTerm;
                                   setShowIngredientResults(false);
                                   setInitialStock(0);
+                                  setPendingIngredientName(ingredientSearchTerm);
                                   setPickerMode("newIngredient");
-                                  newIngredientForm.reset({ name: searchVal, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10 });
                                 }}
                                 data-testid="button-inline-add-ingredient"
                               >
