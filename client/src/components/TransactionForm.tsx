@@ -59,7 +59,6 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
       setOpen(false);
       form.reset();
     } catch (error) {
-      // Error handled by mutation hook toast
     }
   };
 
@@ -82,7 +81,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
           {type === "IN" ? "입고" : type === "PURCHASE" ? "사입" : "출고"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {type === "IN" ? (
@@ -104,35 +103,6 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-4">
-            
-            <FormField
-              control={form.control}
-              name="ingredientId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>식자재</FormLabel>
-                  <Select 
-                    onValueChange={(val) => field.onChange(parseInt(val))} 
-                    defaultValue={field.value?.toString()}
-                    disabled={!!preselectedIngredientId}
-                  >
-                    <FormControl>
-                      <SelectTrigger data-testid="select-ingredient">
-                        <SelectValue placeholder="식자재 선택" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent side="top" align="start">
-                      {ingredients?.map((ing) => (
-                        <SelectItem key={ing.id} value={ing.id.toString()}>
-                          {ing.name} (현재: {ing.currentStock} {ing.unit})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}
@@ -192,6 +162,35 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
               />
             )}
 
+            <FormField
+              control={form.control}
+              name="ingredientId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>식자재</FormLabel>
+                  <Select 
+                    onValueChange={(val) => field.onChange(parseInt(val))} 
+                    defaultValue={field.value?.toString()}
+                    disabled={!!preselectedIngredientId}
+                  >
+                    <FormControl>
+                      <SelectTrigger data-testid="select-ingredient">
+                        <SelectValue placeholder="식자재 선택" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent position="popper" side="top" sideOffset={4}>
+                      {ingredients?.map((ing) => (
+                        <SelectItem key={ing.id} value={ing.id.toString()}>
+                          {ing.name} (현재: {ing.currentStock} {ing.unit})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {(type === "OUT" || type === "PURCHASE") && (
               <FormField
                 control={form.control}
@@ -209,7 +208,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                             <SelectValue placeholder="지점 선택" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent side="top" align="start">
+                        <SelectContent position="popper" side="top" sideOffset={4}>
                           {branchList.map((b) => (
                             <SelectItem key={b.id} value={b.name}>
                               {b.name}
