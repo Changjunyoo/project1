@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { CreateIngredientDialog } from "@/components/CreateIngredientDialog";
+import { EditIngredientDialog } from "@/components/EditIngredientDialog";
 import { TransactionForm } from "@/components/TransactionForm";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useIngredients, useDeleteIngredient } from "@/hooks/use-inventory";
@@ -103,7 +104,8 @@ export default function Inventory() {
                       <td className="px-6 py-4 font-mono font-medium">{item.currentStock}</td>
                       <td className="px-6 py-4 text-muted-foreground">{item.unit}</td>
                       <td className="px-6 py-4 text-muted-foreground">{item.minStockLevel}</td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right flex justify-end gap-1">
+                        <EditIngredientDialog ingredient={item} />
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
