@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowDownToLine, ArrowUpFromLine, ShoppingCart } from "lucide-react";
+import { Loader2, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, ChevronLeft, Check, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -18,13 +19,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useIngredients, useCreateTransaction, useBranches } from "@/hooks/use-inventory";
@@ -35,8 +29,12 @@ interface TransactionFormProps {
   preselectedIngredientId?: number;
 }
 
+type PickerMode = "form" | "ingredient" | "branch";
+
 export function TransactionForm({ type, preselectedIngredientId }: TransactionFormProps) {
   const [open, setOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState<PickerMode>("form");
+  const [searchTerm, setSearchTerm] = useState("");
   const { data: ingredients } = useIngredients();
   const { data: branchList } = useBranches();
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
@@ -62,11 +60,154 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
     }
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setPickerMode("form");
+      setSearchTerm("");
+    }
+  };
+
   const selectedIngredientId = form.watch("ingredientId");
   const selectedIngredient = ingredients?.find(i => i.id === selectedIngredientId);
+  const selectedDestination = form.watch("destination");
+
+  const filteredIngredients = ingredients?.filter(i =>
+    i.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredBranches = branchList?.filter(b =>
+    b.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (pickerMode === "ingredient") {
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button 
+            variant={type === "IN" ? "default" : type === "PURCHASE" ? "secondary" : "outline"} 
+            className={type === "IN" 
+              ? "bg-green-600 text-white" 
+              : type === "PURCHASE"
+              ? "bg-blue-600 text-white"
+              : "border-orange-200 bg-orange-50 text-orange-700"
+            }
+          >
+            {type === "IN" ? <ArrowDownToLine className="w-4 h-4 mr-2" /> : type === "PURCHASE" ? <ShoppingCart className="w-4 h-4 mr-2" /> : <ArrowUpFromLine className="w-4 h-4 mr-2" />}
+            {type === "IN" ? "입고" : type === "PURCHASE" ? "사입" : "출고"}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => { setPickerMode("form"); setSearchTerm(""); }} data-testid="button-back-ingredient">
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <DialogTitle>식자재 선택</DialogTitle>
+            </div>
+            <DialogDescription className="sr-only">식자재를 선택하세요</DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="식자재 검색..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="input-search-ingredient"
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto -mx-2">
+            {filteredIngredients?.map((ing) => (
+              <button
+                key={ing.id}
+                type="button"
+                className={`w-full text-left px-4 py-3 flex items-center justify-between hover-elevate rounded-md mx-0 ${selectedIngredientId === ing.id ? "bg-primary/10 text-primary font-medium" : "text-foreground"}`}
+                onClick={() => {
+                  form.setValue("ingredientId", ing.id);
+                  setPickerMode("form");
+                  setSearchTerm("");
+                }}
+                data-testid={`button-ingredient-${ing.id}`}
+              >
+                <span>{ing.name} <span className="text-muted-foreground text-sm">(현재: {ing.currentStock} {ing.unit})</span></span>
+                {selectedIngredientId === ing.id && <Check className="w-4 h-4 text-primary" />}
+              </button>
+            ))}
+            {filteredIngredients?.length === 0 && (
+              <div className="px-4 py-6 text-center text-muted-foreground text-sm">검색 결과가 없습니다.</div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (pickerMode === "branch") {
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button 
+            variant={type === "IN" ? "default" : type === "PURCHASE" ? "secondary" : "outline"} 
+            className={type === "IN" 
+              ? "bg-green-600 text-white" 
+              : type === "PURCHASE"
+              ? "bg-blue-600 text-white"
+              : "border-orange-200 bg-orange-50 text-orange-700"
+            }
+          >
+            {type === "IN" ? <ArrowDownToLine className="w-4 h-4 mr-2" /> : type === "PURCHASE" ? <ShoppingCart className="w-4 h-4 mr-2" /> : <ArrowUpFromLine className="w-4 h-4 mr-2" />}
+            {type === "IN" ? "입고" : type === "PURCHASE" ? "사입" : "출고"}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => { setPickerMode("form"); setSearchTerm(""); }} data-testid="button-back-branch">
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <DialogTitle>{type === "PURCHASE" ? "배송 지점 선택" : "출고처 선택"}</DialogTitle>
+            </div>
+            <DialogDescription className="sr-only">지점을 선택하세요</DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="지점 검색..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="input-search-branch"
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto -mx-2">
+            {filteredBranches?.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                className={`w-full text-left px-4 py-3 flex items-center justify-between hover-elevate rounded-md mx-0 ${selectedDestination === b.name ? "bg-primary/10 text-primary font-medium" : "text-foreground"}`}
+                onClick={() => {
+                  form.setValue("destination", b.name);
+                  setPickerMode("form");
+                  setSearchTerm("");
+                }}
+                data-testid={`button-branch-${b.id}`}
+              >
+                <span>{b.name}</span>
+                {selectedDestination === b.name && <Check className="w-4 h-4 text-primary" />}
+              </button>
+            ))}
+            {filteredBranches?.length === 0 && (
+              <div className="px-4 py-6 text-center text-muted-foreground text-sm">검색 결과가 없습니다.</div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button 
           variant={type === "IN" ? "default" : type === "PURCHASE" ? "secondary" : "outline"} 
@@ -99,10 +240,38 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
             )}
             {type === "IN" ? "재고 입고 기록" : type === "PURCHASE" ? "사입 내역 기록" : "재고 출고 기록"}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {type === "IN" ? "입고 내역을 기록합니다" : type === "PURCHASE" ? "사입 내역을 기록합니다" : "출고 내역을 기록합니다"}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+
+            <FormField
+              control={form.control}
+              name="ingredientId"
+              render={() => (
+                <FormItem>
+                  <FormLabel>식자재</FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                    onClick={() => !preselectedIngredientId && setPickerMode("ingredient")}
+                    disabled={!!preselectedIngredientId}
+                    data-testid="button-open-ingredient-picker"
+                  >
+                    {selectedIngredient 
+                      ? <span>{selectedIngredient.name} <span className="text-muted-foreground">(현재: {selectedIngredient.currentStock} {selectedIngredient.unit})</span></span>
+                      : <span className="text-muted-foreground">식자재 선택</span>
+                    }
+                    <ChevronLeft className="w-4 h-4 rotate-180 text-muted-foreground" />
+                  </Button>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -162,35 +331,6 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
               />
             )}
 
-            <FormField
-              control={form.control}
-              name="ingredientId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>식자재</FormLabel>
-                  <Select 
-                    onValueChange={(val) => field.onChange(parseInt(val))} 
-                    defaultValue={field.value?.toString()}
-                    disabled={!!preselectedIngredientId}
-                  >
-                    <FormControl>
-                      <SelectTrigger data-testid="select-ingredient">
-                        <SelectValue placeholder="식자재 선택" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent position="popper" side="top" sideOffset={4}>
-                      {ingredients?.map((ing) => (
-                        <SelectItem key={ing.id} value={ing.id.toString()}>
-                          {ing.name} (현재: {ing.currentStock} {ing.unit})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {(type === "OUT" || type === "PURCHASE") && (
               <FormField
                 control={form.control}
@@ -199,23 +339,19 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                   <FormItem>
                     <FormLabel>{type === "PURCHASE" ? "배송 지점" : "출고처 / 지점"}</FormLabel>
                     {branchList && branchList.length > 0 ? (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value ?? ""}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-between font-normal"
+                        onClick={() => setPickerMode("branch")}
+                        data-testid="button-open-branch-picker"
                       >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-destination">
-                            <SelectValue placeholder="지점 선택" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent position="popper" side="top" sideOffset={4}>
-                          {branchList.map((b) => (
-                            <SelectItem key={b.id} value={b.name}>
-                              {b.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        {field.value 
+                          ? <span>{field.value}</span>
+                          : <span className="text-muted-foreground">지점 선택</span>
+                        }
+                        <ChevronLeft className="w-4 h-4 rotate-180 text-muted-foreground" />
+                      </Button>
                     ) : (
                       <FormControl>
                         <Input 
