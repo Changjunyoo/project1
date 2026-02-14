@@ -39,6 +39,7 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
   destination: text("destination"), // 출고 지점/사용처 (Optional for IN/PURCHASE)
   supplier: text("supplier"), // 사입처 (Optional)
   expiryDate: timestamp("expiry_date"), // 유통기한 날짜
+  confirmed: text("confirmed"), // 'PENDING' | 'CONFIRMED' | 'REJECTED' (PURCHASE only)
   createdAt: timestamp("created_at").defaultNow(),
 });
 
