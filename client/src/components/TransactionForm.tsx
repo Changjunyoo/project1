@@ -191,7 +191,27 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
               />
             )}
 
-            {type === "OUT" && (
+            {(type === "OUT" || type === "PURCHASE") && (
+              <FormField
+                control={form.control}
+                name="destination"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{type === "PURCHASE" ? "배송 지점" : "출고처 / 지점"}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="예: 주방 A, 강남점" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {type !== "OUT" && type !== "PURCHASE" && (
               <FormField
                 control={form.control}
                 name="destination"
