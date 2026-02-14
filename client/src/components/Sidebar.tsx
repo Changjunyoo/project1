@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/", label: "대시보드", icon: LayoutDashboard },
   { href: "/inventory", label: "식자재 관리", icon: Package },
-  { href: "/purchases", label: "사입 관리", icon: ShoppingCart },
+  { href: "/purchases", label: "주문서", icon: ShoppingCart },
   { href: "/outgoing", label: "지점별 출고", icon: MapPin },
   { href: "/branches", label: "지점 관리", icon: Building2 },
   { href: "/transactions", label: "입출고 내역", icon: ArrowRightLeft },

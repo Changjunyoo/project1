@@ -23,8 +23,8 @@ export default function Purchases() {
       <main className="flex-1 ml-64 p-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">사입 관리</h1>
-            <p className="text-muted-foreground mt-1">식자재 사입 내역 및 비용을 관리합니다.</p>
+            <h1 className="text-3xl font-bold text-foreground">주문서</h1>
+            <p className="text-muted-foreground mt-1">식자재 주문 내역 및 비용을 관리합니다.</p>
           </div>
           <div className="flex gap-2">
             <TransactionForm type="PURCHASE" />
