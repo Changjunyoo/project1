@@ -183,14 +183,15 @@ export default function OutgoingByBranch() {
                   <th className="px-6 py-4">날짜</th>
                   <th className="px-6 py-4">지점</th>
                   <th className="px-6 py-4">식자재</th>
+                  <th className="px-6 py-4">단위</th>
                   <th className="px-6 py-4">출고 수량</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
                 ) : displayedTransactions.length === 0 ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">
+                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">
                     {selectedBranch ? `"${selectedBranch}" 지점의 출고 내역이 없습니다.` : "등록된 출고 내역이 없습니다."}
                   </td></tr>
                 ) : (
@@ -213,6 +214,7 @@ export default function OutgoingByBranch() {
                           </span>
                         </td>
                         <td className="px-6 py-4 font-medium">{ingredient?.name || "알 수 없음"}</td>
+                        <td className="px-6 py-4 text-muted-foreground">{ingredient?.unit || "-"}</td>
                         <td className="px-6 py-4">
                           <span className="text-orange-600 font-bold">
                             -{tx.quantity} {ingredient?.unit}

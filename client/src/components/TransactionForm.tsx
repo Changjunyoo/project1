@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, ChevronLeft, Check, Search } from "lucide-react";
+import { Loader2, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, ChevronLeft, Check, Search, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,15 +21,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useIngredients, useCreateTransaction, useBranches } from "@/hooks/use-inventory";
-import { createTransactionRequestSchema } from "@shared/schema";
+import { useIngredients, useCreateIngredient, useCreateTransaction, useBranches } from "@/hooks/use-inventory";
+import { createTransactionRequestSchema, insertIngredientSchema, INGREDIENT_CATEGORIES } from "@shared/schema";
 
 interface TransactionFormProps {
   type: "IN" | "OUT" | "PURCHASE";
   preselectedIngredientId?: number;
 }
 
-type PickerMode = "form" | "ingredient" | "branch";
+type PickerMode = "form" | "ingredient" | "branch" | "newIngredient";
 
 export function TransactionForm({ type, preselectedIngredientId }: TransactionFormProps) {
   const [open, setOpen] = useState(false);
@@ -38,6 +38,19 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
   const { data: ingredients } = useIngredients();
   const { data: branchList } = useBranches();
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
+  const { mutateAsync: createIngredient, isPending: isCreatingIngredient } = useCreateIngredient();
+
+  const newIngredientForm = useForm<z.infer<typeof insertIngredientSchema>>({
+    resolver: zodResolver(insertIngredientSchema),
+    defaultValues: {
+      name: "",
+      brand: "",
+      category: "",
+      origin: "",
+      unit: "kg",
+      minStockLevel: 10,
+    },
+  });
 
   const form = useForm<z.infer<typeof createTransactionRequestSchema>>({
     resolver: zodResolver(createTransactionRequestSchema),
@@ -138,6 +151,170 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
               <div className="px-4 py-6 text-center text-muted-foreground text-sm">검색 결과가 없습니다.</div>
             )}
           </div>
+          <div className="pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => { setPickerMode("newIngredient"); setSearchTerm(""); newIngredientForm.reset(); }}
+              data-testid="button-add-new-ingredient"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              새 식자재 추가
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (pickerMode === "newIngredient") {
+    const triggerButton = (
+      <DialogTrigger asChild>
+        <Button 
+          variant={type === "IN" ? "default" : type === "PURCHASE" ? "secondary" : "outline"} 
+          className={type === "IN" 
+            ? "bg-green-600 text-white" 
+            : type === "PURCHASE"
+            ? "bg-blue-600 text-white"
+            : "border-orange-200 bg-orange-50 text-orange-700"
+          }
+        >
+          {type === "IN" ? <ArrowDownToLine className="w-4 h-4 mr-2" /> : type === "PURCHASE" ? <ShoppingCart className="w-4 h-4 mr-2" /> : <ArrowUpFromLine className="w-4 h-4 mr-2" />}
+          {type === "IN" ? "입고" : type === "PURCHASE" ? "사입" : "출고"}
+        </Button>
+      </DialogTrigger>
+    );
+
+    const onCreateIngredient = async (values: z.infer<typeof insertIngredientSchema>) => {
+      try {
+        const created = await createIngredient(values);
+        form.setValue("ingredientId", created.id);
+        newIngredientForm.reset();
+        setPickerMode("form");
+      } catch (error) {
+      }
+    };
+
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        {triggerButton}
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => setPickerMode("ingredient")} data-testid="button-back-new-ingredient">
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <DialogTitle>새 식자재 추가</DialogTitle>
+            </div>
+            <DialogDescription className="sr-only">새로운 식자재를 등록합니다</DialogDescription>
+          </DialogHeader>
+          <Form {...newIngredientForm}>
+            <form onSubmit={newIngredientForm.handleSubmit(onCreateIngredient)} className="space-y-4">
+              <FormField
+                control={newIngredientForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>품목명</FormLabel>
+                    <FormControl>
+                      <Input placeholder="예: 소고기 등심" {...field} data-testid="input-new-ingredient-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={newIngredientForm.control}
+                  name="brand"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>브랜드</FormLabel>
+                      <FormControl>
+                        <Input placeholder="예: CJ" {...field} value={field.value || ''} data-testid="input-new-ingredient-brand" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={newIngredientForm.control}
+                  name="origin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>원산지</FormLabel>
+                      <FormControl>
+                        <Input placeholder="예: 국내산" {...field} value={field.value || ''} data-testid="input-new-ingredient-origin" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={newIngredientForm.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>카테고리</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2">
+                        {INGREDIENT_CATEGORIES.map((cat) => (
+                          <Button
+                            key={cat}
+                            type="button"
+                            variant={field.value === cat ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => field.onChange(cat)}
+                            className="flex-1"
+                            data-testid={`button-new-cat-${cat}`}
+                          >
+                            {cat}
+                          </Button>
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={newIngredientForm.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>단위</FormLabel>
+                      <FormControl>
+                        <Input placeholder="kg, 박스, 개..." {...field} data-testid="input-new-ingredient-unit" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={newIngredientForm.control}
+                  name="minStockLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>최소 재고</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} data-testid="input-new-ingredient-min-stock" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={isCreatingIngredient} data-testid="button-submit-new-ingredient">
+                  {isCreatingIngredient && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  추가하고 선택
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     );
