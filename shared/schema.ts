@@ -5,6 +5,14 @@ import { z } from "zod";
 
 // === TABLE DEFINITIONS ===
 
+// 지점 (Branches)
+export const branches = pgTable("branches", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // 식자재 (Ingredients)
 export const ingredients = pgTable("ingredients", {
   id: serial("id").primaryKey(),
@@ -30,6 +38,11 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
 
 // === SCHEMAS ===
 
+export const insertBranchSchema = createInsertSchema(branches).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertIngredientSchema = createInsertSchema(ingredients).omit({ 
   id: true, 
   currentStock: true, // Managed by transactions
@@ -42,6 +55,9 @@ export const insertTransactionSchema = createInsertSchema(inventoryTransactions)
 });
 
 // === EXPLICIT TYPES ===
+
+export type Branch = typeof branches.$inferSelect;
+export type InsertBranch = z.infer<typeof insertBranchSchema>;
 
 export type Ingredient = typeof ingredients.$inferSelect;
 export type InsertIngredient = z.infer<typeof insertIngredientSchema>;
