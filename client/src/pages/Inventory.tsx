@@ -101,6 +101,7 @@ export default function Inventory() {
                   <th className="px-6 py-4">상태</th>
                   <th className="px-6 py-4">현재 재고</th>
                   <th className="px-6 py-4">단위</th>
+                  <th className="px-6 py-4">유통기한</th>
                   <th className="px-6 py-4">최소 재고</th>
                   <th className="px-6 py-4 text-right">작업</th>
                 </tr>
@@ -108,11 +109,11 @@ export default function Inventory() {
               <tbody className="divide-y divide-border">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">식자재 목록을 불러오는 중...</td>
+                    <td colSpan={10} className="px-6 py-8 text-center text-muted-foreground">식자재 목록을 불러오는 중...</td>
                   </tr>
                 ) : filteredIngredients?.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">검색 결과가 없습니다.</td>
+                    <td colSpan={10} className="px-6 py-8 text-center text-muted-foreground">검색 결과가 없습니다.</td>
                   </tr>
                 ) : (
                   filteredIngredients?.map((item) => (
@@ -130,6 +131,7 @@ export default function Inventory() {
                       </td>
                       <td className="px-6 py-4 font-mono font-medium">{item.currentStock}</td>
                       <td className="px-6 py-4 text-muted-foreground">{item.unit}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{item.shelfLifeDays ? `${item.shelfLifeDays}일` : "-"}</td>
                       <td className="px-6 py-4 text-muted-foreground">{item.minStockLevel}</td>
                       <td className="px-6 py-4 text-right flex justify-end gap-1">
                         <EditIngredientDialog ingredient={item} />

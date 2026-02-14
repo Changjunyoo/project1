@@ -41,6 +41,7 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
       origin: ingredient.origin || "",
       unit: ingredient.unit,
       minStockLevel: ingredient.minStockLevel,
+      shelfLifeDays: ingredient.shelfLifeDays ?? undefined,
     },
   });
 
@@ -53,6 +54,7 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
         origin: ingredient.origin || "",
         unit: ingredient.unit,
         minStockLevel: ingredient.minStockLevel,
+        shelfLifeDays: ingredient.shelfLifeDays ?? undefined,
       });
     }
   }, [open, ingredient, form]);
@@ -181,6 +183,28 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="shelfLifeDays"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>유통기한 (일수)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="예: 30 (사입일로부터 30일)"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                      data-testid="input-shelf-life-edit"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isPending} data-testid="button-submit-edit">

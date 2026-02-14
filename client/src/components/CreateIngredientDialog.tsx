@@ -37,6 +37,7 @@ export function CreateIngredientDialog() {
       origin: "",
       unit: "kg",
       minStockLevel: 10,
+      shelfLifeDays: undefined,
     },
   });
 
@@ -166,6 +167,28 @@ export function CreateIngredientDialog() {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="shelfLifeDays"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>유통기한 (일수)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="예: 30 (사입일로부터 30일)"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                      data-testid="input-shelf-life"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isPending} data-testid="button-submit-ingredient">

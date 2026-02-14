@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, ChevronLeft, Check, Search, Plus } from "lucide-react";
+import { Loader2, ArrowDownToLine, ArrowUpFromLine, ShoppingCart, ChevronLeft, Check, Search, Plus, CalendarDays } from "lucide-react";
+import { addDays, format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
       origin: "",
       unit: "kg",
       minStockLevel: 10,
+      shelfLifeDays: undefined,
     },
   });
 
@@ -72,7 +74,11 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
 
   const onSubmit = async (values: z.infer<typeof createTransactionRequestSchema>) => {
     try {
-      await createTransaction(values);
+      const submitValues = { ...values };
+      if ((type === "IN" || type === "PURCHASE") && selectedIngredient?.shelfLifeDays) {
+        submitValues.expiryDate = addDays(new Date(), selectedIngredient.shelfLifeDays);
+      }
+      await createTransaction(submitValues);
       setOpen(false);
       form.reset();
     } catch (error) {
@@ -116,7 +122,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
 
   useEffect(() => {
     if (pickerMode === "newIngredient" && pendingIngredientName) {
-      newIngredientForm.reset({ name: pendingIngredientName, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10 });
+      newIngredientForm.reset({ name: pendingIngredientName, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10, shelfLifeDays: undefined });
       setPendingIngredientName("");
     }
   }, [pickerMode, pendingIngredientName]);
@@ -325,6 +331,27 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                     <FormLabel>단위</FormLabel>
                     <FormControl>
                       <Input placeholder="kg, 박스, 개..." {...field} data-testid="input-new-ingredient-unit" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={newIngredientForm.control}
+                name="shelfLifeDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>유통기한 (일수)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="예: 30 (사입일로부터 30일)"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                        data-testid="input-new-ingredient-shelf-life"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -605,6 +632,16 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                   </FormItem>
                 )}
               />
+            )}
+
+            {(type === "IN" || type === "PURCHASE") && selectedIngredient?.shelfLifeDays && (
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/50 rounded-md border border-border" data-testid="text-expiry-info">
+                <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm text-muted-foreground">
+                  유통기한: <span className="font-medium text-foreground">{format(addDays(new Date(), selectedIngredient.shelfLifeDays), "yyyy-MM-dd")}</span>
+                  <span className="ml-1">({selectedIngredient.shelfLifeDays}일)</span>
+                </span>
+              </div>
             )}
 
             {type === "PURCHASE" && (

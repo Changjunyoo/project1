@@ -25,6 +25,7 @@ export const ingredients = pgTable("ingredients", {
   unit: text("unit").notNull(), // e.g., kg, g, box, ea
   currentStock: integer("current_stock").notNull().default(0),
   minStockLevel: integer("min_stock_level").notNull().default(10),
+  shelfLifeDays: integer("shelf_life_days"), // 유통기한 (일수)
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
@@ -37,6 +38,7 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
   unitPrice: integer("unit_price"), // 입고/사입 단가 (Optional for OUT)
   destination: text("destination"), // 출고 지점/사용처 (Optional for IN/PURCHASE)
   supplier: text("supplier"), // 사입처 (Optional)
+  expiryDate: timestamp("expiry_date"), // 유통기한 날짜
   createdAt: timestamp("created_at").defaultNow(),
 });
 
