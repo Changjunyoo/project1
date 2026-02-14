@@ -440,7 +440,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
           {type === "IN" ? "입고" : type === "PURCHASE" ? "사입" : "출고"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] overflow-visible">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {type === "IN" ? (
@@ -470,7 +470,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
               control={form.control}
               name="ingredientId"
               render={() => (
-                <FormItem>
+                <FormItem style={{ position: "relative", zIndex: showIngredientResults ? 50 : "auto" }}>
                   <FormLabel>식자재</FormLabel>
                   {preselectedIngredientId ? (
                     <Button
