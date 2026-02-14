@@ -72,17 +72,17 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
         <Button 
           variant={type === "IN" ? "default" : type === "PURCHASE" ? "secondary" : "outline"} 
           className={type === "IN" 
-            ? "bg-green-600 hover:bg-green-700 text-white" 
+            ? "bg-green-600 text-white" 
             : type === "PURCHASE"
-            ? "bg-blue-600 hover:bg-blue-700 text-white"
-            : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:text-orange-800"
+            ? "bg-blue-600 text-white"
+            : "border-orange-200 bg-orange-50 text-orange-700"
           }
         >
           {type === "IN" ? <ArrowDownToLine className="w-4 h-4 mr-2" /> : type === "PURCHASE" ? <ShoppingCart className="w-4 h-4 mr-2" /> : <ArrowUpFromLine className="w-4 h-4 mr-2" />}
           {type === "IN" ? "입고" : type === "PURCHASE" ? "사입" : "출고"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {type === "IN" ? (
@@ -103,7 +103,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-4">
             
             <FormField
               control={form.control}
@@ -117,11 +117,11 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                     disabled={!!preselectedIngredientId}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger data-testid="select-ingredient">
                         <SelectValue placeholder="식자재 선택" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent side="bottom" align="start">
                       {ingredients?.map((ing) => (
                         <SelectItem key={ing.id} value={ing.id.toString()}>
                           {ing.name} (현재: {ing.currentStock} {ing.unit})
@@ -134,43 +134,42 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>수량 {selectedIngredient && `(${selectedIngredient.unit})`}</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="1" {...field} onChange={e => field.onChange(parseInt(e.target.value))} data-testid="input-quantity" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {(type === "IN" || type === "PURCHASE") && (
               <FormField
                 control={form.control}
-                name="quantity"
+                name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>수량 {selectedIngredient && `(${selectedIngredient.unit})`}</FormLabel>
+                    <FormLabel>단가 (₩)</FormLabel>
                     <FormControl>
-                      <Input type="number" min="1" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value))}
+                        data-testid="input-unit-price"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              {(type === "IN" || type === "PURCHASE") && (
-                <FormField
-                  control={form.control}
-                  name="unitPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>단가 (₩)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
-                          {...field} 
-                          value={field.value ?? ""} 
-                          onChange={e => field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value))} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
+            )}
 
             {type === "PURCHASE" && (
               <FormField
@@ -184,6 +183,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                         placeholder="예: 가락시장, XX상사" 
                         {...field} 
                         value={field.value ?? ""} 
+                        data-testid="input-supplier"
                       />
                     </FormControl>
                     <FormMessage />
@@ -209,7 +209,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                             <SelectValue placeholder="지점 선택" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent side="bottom" align="start">
                           {branchList.map((b) => (
                             <SelectItem key={b.id} value={b.name}>
                               {b.name}
@@ -234,7 +234,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
             )}
 
             <div className="flex justify-end pt-4">
-              <Button type="submit" disabled={isPending} className={type === "IN" ? "bg-green-600 hover:bg-green-700" : type === "PURCHASE" ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-600 hover:bg-orange-700"}>
+              <Button type="submit" disabled={isPending} data-testid="button-submit-transaction" className={type === "IN" ? "bg-green-600" : type === "PURCHASE" ? "bg-blue-600" : "bg-orange-600"}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 기록 완료
               </Button>
