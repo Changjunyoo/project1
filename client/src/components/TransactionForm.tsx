@@ -470,7 +470,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
               control={form.control}
               name="ingredientId"
               render={() => (
-                <FormItem style={{ position: "relative", zIndex: showIngredientResults ? 50 : "auto" }}>
+                <FormItem>
                   <FormLabel>식자재</FormLabel>
                   {preselectedIngredientId ? (
                     <Button
@@ -486,29 +486,31 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                       }
                     </Button>
                   ) : (
-                    <div ref={ingredientSearchRef} className="relative" style={{ zIndex: showIngredientResults ? 100 : "auto" }}>
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                      <Input
-                        placeholder="식자재 검색..."
-                        className="pl-9"
-                        value={selectedIngredient && !showIngredientResults ? selectedIngredient.name : ingredientSearchTerm}
-                        onChange={(e) => {
-                          setIngredientSearchTerm(e.target.value);
-                          setShowIngredientResults(true);
-                          if (selectedIngredient) {
-                            form.setValue("ingredientId", undefined as any);
-                          }
-                        }}
-                        onFocus={() => {
-                          if (selectedIngredient) {
-                            setIngredientSearchTerm(selectedIngredient.name);
-                          }
-                          setShowIngredientResults(true);
-                        }}
-                        data-testid="input-ingredient-search"
-                      />
+                    <div ref={ingredientSearchRef}>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        <Input
+                          placeholder="식자재 검색..."
+                          className="pl-9"
+                          value={selectedIngredient && !showIngredientResults ? selectedIngredient.name : ingredientSearchTerm}
+                          onChange={(e) => {
+                            setIngredientSearchTerm(e.target.value);
+                            setShowIngredientResults(true);
+                            if (selectedIngredient) {
+                              form.setValue("ingredientId", undefined as any);
+                            }
+                          }}
+                          onFocus={() => {
+                            if (selectedIngredient) {
+                              setIngredientSearchTerm(selectedIngredient.name);
+                            }
+                            setShowIngredientResults(true);
+                          }}
+                          data-testid="input-ingredient-search"
+                        />
+                      </div>
                       {showIngredientResults && (
-                        <div className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto" style={{ zIndex: 9999 }}>
+                        <div className="w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
                           {inlineFilteredIngredients && inlineFilteredIngredients.length > 0 ? (
                             inlineFilteredIngredients.map((ing) => (
                               <button
