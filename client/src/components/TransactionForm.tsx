@@ -473,8 +473,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                       }
                     </Button>
                   ) : (
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <div className="relative" style={{ zIndex: showIngredientResults ? 100 : "auto" }}>
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                       <Input
                         placeholder="식자재 검색..."
                         className="pl-9"
@@ -495,7 +495,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                         data-testid="input-ingredient-search"
                       />
                       {showIngredientResults && (
-                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto" style={{ zIndex: 9999 }}>
                           {inlineFilteredIngredients && inlineFilteredIngredients.length > 0 ? (
                             inlineFilteredIngredients.map((ing) => (
                               <button
