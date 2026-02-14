@@ -4,13 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Loader2 } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -52,14 +45,13 @@ export function CreateIngredientDialog() {
       setOpen(false);
       form.reset();
     } catch (error) {
-      // Error handled by mutation hook
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+        <Button className="bg-primary shadow-lg shadow-primary/25">
           <Plus className="w-4 h-4 mr-2" />
           식자재 추가
         </Button>
@@ -102,6 +94,34 @@ export function CreateIngredientDialog() {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>카테고리</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2">
+                      {INGREDIENT_CATEGORIES.map((cat) => (
+                        <Button
+                          key={cat}
+                          type="button"
+                          variant={field.value === cat ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange(cat)}
+                          data-testid={`button-category-${cat}`}
+                          className={field.value === cat ? "flex-1" : "flex-1"}
+                        >
+                          {cat}
+                        </Button>
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -131,31 +151,6 @@ export function CreateIngredientDialog() {
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>카테고리</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-category">
-                        <SelectValue placeholder="카테고리 선택" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent side="top">
-                      {INGREDIENT_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat} data-testid={`select-category-${cat}`}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isPending} data-testid="button-submit-ingredient">

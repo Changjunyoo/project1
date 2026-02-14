@@ -4,13 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Pencil, Loader2 } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -67,14 +60,13 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
       await updateIngredient({ id: ingredient.id, ...values });
       setOpen(false);
     } catch (error) {
-      // Error handled by mutation hook
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" size="icon">
           <Pencil className="w-4 h-4" />
         </Button>
       </DialogTrigger>
@@ -116,6 +108,34 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>카테고리</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2">
+                      {INGREDIENT_CATEGORIES.map((cat) => (
+                        <Button
+                          key={cat}
+                          type="button"
+                          variant={field.value === cat ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange(cat)}
+                          data-testid={`button-category-edit-${cat}`}
+                          className="flex-1"
+                        >
+                          {cat}
+                        </Button>
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -145,31 +165,6 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>카테고리</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-category-edit">
-                        <SelectValue placeholder="카테고리 선택" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent side="top">
-                      {INGREDIENT_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isPending} data-testid="button-submit-edit">
