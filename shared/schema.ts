@@ -14,13 +14,16 @@ export const branches = pgTable("branches", {
 });
 
 // 식자재 (Ingredients)
+export const INGREDIENT_CATEGORIES = ["공산품", "야채", "육류"] as const;
+
 export const ingredients = pgTable("ingredients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  brand: text("brand"), // 브랜드 필드 추가
+  brand: text("brand"),
+  category: text("category"),
   unit: text("unit").notNull(), // e.g., kg, g, box, ea
   currentStock: integer("current_stock").notNull().default(0),
-  minStockLevel: integer("min_stock_level").notNull().default(10), // Low stock alert threshold
+  minStockLevel: integer("min_stock_level").notNull().default(10),
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
