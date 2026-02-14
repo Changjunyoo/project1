@@ -1,10 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Package, ArrowRightLeft, Settings, ChefHat } from "lucide-react";
+import { LayoutDashboard, Package, ArrowRightLeft, Settings, ChefHat, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "대시보드", icon: LayoutDashboard },
   { href: "/inventory", label: "식자재 관리", icon: Package },
+  { href: "/purchases", label: "사입 관리", icon: ShoppingCart },
   { href: "/transactions", label: "입출고 내역", icon: ArrowRightLeft },
 ];
 

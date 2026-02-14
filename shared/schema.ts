@@ -20,10 +20,11 @@ export const ingredients = pgTable("ingredients", {
 export const inventoryTransactions = pgTable("inventory_transactions", {
   id: serial("id").primaryKey(),
   ingredientId: integer("ingredient_id").notNull(),
-  type: text("type").notNull(), // 'IN' (입고) or 'OUT' (출고)
+  type: text("type").notNull(), // 'IN' (입고), 'OUT' (출고), 'PURCHASE' (사입)
   quantity: integer("quantity").notNull(),
-  unitPrice: integer("unit_price"), // 입고 단가 (Optional for OUT)
-  destination: text("destination"), // 출고 지점/사용처 (Optional for IN)
+  unitPrice: integer("unit_price"), // 입고/사입 단가 (Optional for OUT)
+  destination: text("destination"), // 출고 지점/사용처 (Optional for IN/PURCHASE)
+  supplier: text("supplier"), // 사입처 (Optional)
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -55,7 +56,7 @@ export type UpdateIngredientRequest = Partial<InsertIngredient>;
 // For creating a transaction, we might want to validate positive quantities
 export const createTransactionRequestSchema = insertTransactionSchema.extend({
   quantity: z.number().int().positive(),
-  type: z.enum(["IN", "OUT"]),
+  type: z.enum(["IN", "OUT", "PURCHASE"]),
 });
 
 export type CreateTransactionRequest = z.infer<typeof createTransactionRequestSchema>;
