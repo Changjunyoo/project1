@@ -1,9 +1,10 @@
 import { Sidebar } from "@/components/Sidebar";
-import { useTransactions, useIngredients } from "@/hooks/use-inventory";
+import { useTransactions, useIngredients, useBranches } from "@/hooks/use-inventory";
 import { TransactionForm } from "@/components/TransactionForm";
 import { format } from "date-fns";
-import { ArrowUpRight, MapPin, Package } from "lucide-react";
+import { ArrowUpRight, MapPin, Package, Building2 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 import {
   Card,
   CardContent,
@@ -12,26 +13,35 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export default function OutgoingByBranch() {
   const { data: transactions, isLoading } = useTransactions();
   const { data: ingredients } = useIngredients();
+  const { data: registeredBranches } = useBranches();
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
 
   const outTransactions = transactions?.filter(tx => tx.type === "OUT") || [];
 
-  const branchMap = new Map<string, typeof outTransactions>();
+  const txByBranch = new Map<string, typeof outTransactions>();
   outTransactions.forEach(tx => {
     const branch = tx.destination || "미지정";
-    if (!branchMap.has(branch)) branchMap.set(branch, []);
-    branchMap.get(branch)!.push(tx);
+    if (!txByBranch.has(branch)) txByBranch.set(branch, []);
+    txByBranch.get(branch)!.push(tx);
   });
 
-  const branches = Array.from(branchMap.entries()).sort((a, b) => b[1].length - a[1].length);
+  const allBranchNames = new Set<string>();
+  registeredBranches?.forEach(b => allBranchNames.add(b.name));
+  txByBranch.forEach((_, name) => allBranchNames.add(name));
+
+  const branchEntries = Array.from(allBranchNames).map(name => ({
+    name,
+    count: txByBranch.get(name)?.length || 0,
+    totalQty: (txByBranch.get(name) || []).reduce((s, tx) => s + tx.quantity, 0),
+    isRegistered: registeredBranches?.some(b => b.name === name) || false,
+  })).sort((a, b) => b.count - a.count);
 
   const displayedTransactions = selectedBranch
-    ? branchMap.get(selectedBranch) || []
+    ? txByBranch.get(selectedBranch) || []
     : outTransactions;
 
   return (
@@ -43,7 +53,13 @@ export default function OutgoingByBranch() {
             <h1 className="text-3xl font-bold text-foreground" data-testid="text-page-title">지점별 출고</h1>
             <p className="text-muted-foreground mt-1">지점별 출고 현황을 확인합니다.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Link href="/branches">
+              <Button variant="outline" data-testid="link-branch-management">
+                <Building2 className="w-4 h-4 mr-2" />
+                지점 관리
+              </Button>
+            </Link>
             <TransactionForm type="OUT" />
           </div>
         </div>
@@ -60,11 +76,20 @@ export default function OutgoingByBranch() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">총 지점 수</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">등록 지점</CardTitle>
+              <Building2 className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold" data-testid="text-registered-branch-count">{registeredBranches?.length || 0}곳</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">출고 지점</CardTitle>
               <MapPin className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-branch-count">{branches.length}곳</div>
+              <div className="text-2xl font-bold" data-testid="text-active-branch-count">{txByBranch.size}곳</div>
             </CardContent>
           </Card>
           <Card>
@@ -89,20 +114,66 @@ export default function OutgoingByBranch() {
           >
             전체
           </Button>
-          {branches.map(([branch, txs]) => (
+          {branchEntries.map((entry) => (
             <Button
-              key={branch}
-              variant={selectedBranch === branch ? "default" : "outline"}
+              key={entry.name}
+              variant={selectedBranch === entry.name ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedBranch(branch)}
-              data-testid={`button-filter-branch-${branch}`}
+              onClick={() => setSelectedBranch(entry.name)}
+              data-testid={`button-filter-branch-${entry.name}`}
             >
-              <MapPin className="w-3 h-3 mr-1" />
-              {branch}
-              <Badge variant="secondary" className="ml-1.5 no-default-active-elevate">{txs.length}</Badge>
+              {entry.isRegistered ? (
+                <Building2 className="w-3 h-3 mr-1" />
+              ) : (
+                <MapPin className="w-3 h-3 mr-1" />
+              )}
+              {entry.name}
+              <Badge variant="secondary" className="ml-1.5 no-default-active-elevate">{entry.count}</Badge>
             </Button>
           ))}
         </div>
+
+        {selectedBranch && (() => {
+          const entry = branchEntries.find(e => e.name === selectedBranch);
+          const registered = registeredBranches?.find(b => b.name === selectedBranch);
+          if (!entry) return null;
+          return (
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      {entry.isRegistered ? (
+                        <Building2 className="w-5 h-5 text-primary" />
+                      ) : (
+                        <MapPin className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{selectedBranch}</h3>
+                      {registered?.address && (
+                        <p className="text-sm text-muted-foreground">{registered.address}</p>
+                      )}
+                      {!entry.isRegistered && (
+                        <p className="text-xs text-muted-foreground">미등록 지점</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-6">
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">출고 건수</p>
+                      <p className="text-xl font-bold">{entry.count}건</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">총 출고량</p>
+                      <p className="text-xl font-bold">{entry.totalQty.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
@@ -125,6 +196,7 @@ export default function OutgoingByBranch() {
                 ) : (
                   displayedTransactions.map((tx) => {
                     const ingredient = ingredients?.find(i => i.id === tx.ingredientId);
+                    const isRegistered = registeredBranches?.some(b => b.name === tx.destination);
                     return (
                       <tr key={tx.id} className="hover:bg-muted/30 transition-colors" data-testid={`row-transaction-${tx.id}`}>
                         <td className="px-6 py-4 text-muted-foreground">
@@ -132,7 +204,11 @@ export default function OutgoingByBranch() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                            {isRegistered ? (
+                              <Building2 className="w-3.5 h-3.5 text-primary" />
+                            ) : (
+                              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
                             <span className="font-medium">{tx.destination || "미지정"}</span>
                           </span>
                         </td>
