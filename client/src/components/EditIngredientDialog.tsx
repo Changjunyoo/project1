@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,8 +21,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useUpdateIngredient } from "@/hooks/use-inventory";
+import { useIngredients, useUpdateIngredient } from "@/hooks/use-inventory";
 import { insertIngredientSchema, INGREDIENT_CATEGORIES, type Ingredient } from "@shared/schema";
+
+const editIngredientSchema = insertIngredientSchema.extend({
+  currentStock: z.number().int().min(0),
+});
 
 interface EditIngredientDialogProps {
   ingredient: Ingredient;
@@ -31,15 +35,23 @@ interface EditIngredientDialogProps {
 export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) {
   const [open, setOpen] = useState(false);
   const { mutateAsync: updateIngredient, isPending } = useUpdateIngredient();
+  const { data: allIngredients } = useIngredients();
 
-  const form = useForm<z.infer<typeof insertIngredientSchema>>({
-    resolver: zodResolver(insertIngredientSchema),
+  const existingUnits = useMemo(() => {
+    if (!allIngredients) return [];
+    const units = Array.from(new Set(allIngredients.map(i => i.unit).filter(Boolean))) as string[];
+    return units.sort();
+  }, [allIngredients]);
+
+  const form = useForm<z.infer<typeof editIngredientSchema>>({
+    resolver: zodResolver(editIngredientSchema),
     defaultValues: {
       name: ingredient.name,
       brand: ingredient.brand || "",
       category: ingredient.category || "",
       origin: ingredient.origin || "",
       unit: ingredient.unit,
+      currentStock: ingredient.currentStock,
       minStockLevel: ingredient.minStockLevel,
       shelfLifeDays: ingredient.shelfLifeDays ?? undefined,
     },
@@ -53,13 +65,14 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
         category: ingredient.category || "",
         origin: ingredient.origin || "",
         unit: ingredient.unit,
+        currentStock: ingredient.currentStock,
         minStockLevel: ingredient.minStockLevel,
         shelfLifeDays: ingredient.shelfLifeDays ?? undefined,
       });
     }
   }, [open, ingredient, form]);
 
-  const onSubmit = async (values: z.infer<typeof insertIngredientSchema>) => {
+  const onSubmit = async (values: z.infer<typeof editIngredientSchema>) => {
     try {
       await updateIngredient({ id: ingredient.id, ...values });
       setOpen(false);
@@ -154,15 +167,53 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>단위</FormLabel>
+                  <FormControl>
+                    <Input {...field} data-testid="input-unit-edit" />
+                  </FormControl>
+                  {existingUnits.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <span className="text-xs text-muted-foreground">이전 단위:</span>
+                      {existingUnits.map((u) => (
+                        <Button
+                          key={u}
+                          type="button"
+                          variant={field.value === u ? "default" : "outline"}
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => field.onChange(u)}
+                          data-testid={`button-unit-suggestion-${u}`}
+                        >
+                          {u}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="unit"
+                name="currentStock"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>단위</FormLabel>
+                    <FormLabel>현재 재고</FormLabel>
                     <FormControl>
-                      <Input {...field} data-testid="input-unit-edit" />
+                      <Input
+                        type="number"
+                        min="0"
+                        {...field}
+                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                        data-testid="input-current-stock-edit"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -182,29 +233,29 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                   </FormItem>
                 )}
               />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="shelfLifeDays"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>유통기한 (일수)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="예: 30 (사입일로부터 30일)"
-                      {...field}
-                      value={field.value ?? ""}
-                      onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
-                      data-testid="input-shelf-life-edit"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="shelfLifeDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>유통기한(일)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="예: 30"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                        data-testid="input-shelf-life-edit"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isPending} data-testid="button-submit-edit">
