@@ -23,18 +23,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, MoreVertical, Trash2, History } from "lucide-react";
 import { Link } from "wouter";
+import { INGREDIENT_CATEGORIES } from "@shared/schema";
 
 export default function Inventory() {
   const { data: ingredients, isLoading } = useIngredients();
   const { mutate: deleteIngredient } = useDeleteIngredient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const filteredIngredients = ingredients?.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredIngredients = ingredients?.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="flex bg-muted/20 min-h-screen">
@@ -62,8 +73,20 @@ export default function Inventory() {
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                data-testid="input-search"
               />
             </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[140px]" data-testid="select-category-filter">
+                <SelectValue placeholder="전체 카테고리" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                {INGREDIENT_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Table */}
@@ -72,6 +95,7 @@ export default function Inventory() {
               <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
                 <tr>
                   <th className="px-6 py-4">품목명</th>
+                  <th className="px-6 py-4">카테고리</th>
                   <th className="px-6 py-4">브랜드</th>
                   <th className="px-6 py-4">상태</th>
                   <th className="px-6 py-4">현재 재고</th>
@@ -83,11 +107,11 @@ export default function Inventory() {
               <tbody className="divide-y divide-border">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">식자재 목록을 불러오는 중...</td>
+                    <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">식자재 목록을 불러오는 중...</td>
                   </tr>
                 ) : filteredIngredients?.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">검색 결과가 없습니다.</td>
+                    <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">검색 결과가 없습니다.</td>
                   </tr>
                 ) : (
                   filteredIngredients?.map((item) => (
@@ -97,6 +121,7 @@ export default function Inventory() {
                           {item.name}
                         </Link>
                       </td>
+                      <td className="px-6 py-4 text-muted-foreground">{item.category || "-"}</td>
                       <td className="px-6 py-4 text-muted-foreground">{item.brand || "-"}</td>
                       <td className="px-6 py-4">
                         <StatusBadge current={item.currentStock} min={item.minStockLevel} />

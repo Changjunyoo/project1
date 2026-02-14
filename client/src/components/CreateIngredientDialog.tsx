@@ -4,6 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Loader2 } from "lucide-react";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -22,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCreateIngredient } from "@/hooks/use-inventory";
-import { insertIngredientSchema } from "@shared/schema";
+import { insertIngredientSchema, INGREDIENT_CATEGORIES } from "@shared/schema";
 
 export function CreateIngredientDialog() {
   const [open, setOpen] = useState(false);
@@ -33,6 +40,7 @@ export function CreateIngredientDialog() {
     defaultValues: {
       name: "",
       brand: "",
+      category: "",
       unit: "kg",
       minStockLevel: 10,
     },
@@ -89,6 +97,31 @@ export function CreateIngredientDialog() {
                   <FormControl>
                     <Input placeholder="예: CJ제일제당" {...field} value={field.value || ''} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>카테고리</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-category">
+                        <SelectValue placeholder="카테고리 선택" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {INGREDIENT_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat} data-testid={`select-category-${cat}`}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
