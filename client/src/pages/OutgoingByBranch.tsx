@@ -60,7 +60,7 @@ export default function OutgoingByBranch() {
                 지점 관리
               </Button>
             </Link>
-            <TransactionForm type="OUT" />
+            <TransactionForm key={selectedBranch || "all"} type="OUT" preselectedDestination={selectedBranch || undefined} />
           </div>
         </div>
 

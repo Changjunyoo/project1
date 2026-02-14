@@ -27,11 +27,12 @@ import { createTransactionRequestSchema, insertIngredientSchema, INGREDIENT_CATE
 interface TransactionFormProps {
   type: "IN" | "OUT" | "PURCHASE";
   preselectedIngredientId?: number;
+  preselectedDestination?: string;
 }
 
 type PickerMode = "form" | "ingredient" | "branch" | "newIngredient";
 
-export function TransactionForm({ type, preselectedIngredientId }: TransactionFormProps) {
+export function TransactionForm({ type, preselectedIngredientId, preselectedDestination }: TransactionFormProps) {
   const [open, setOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<PickerMode>("form");
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,7 +62,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
       ingredientId: preselectedIngredientId || undefined,
       quantity: 0,
       unitPrice: (type === "IN" || type === "PURCHASE") ? 0 : undefined,
-      destination: (type === "OUT" || type === "PURCHASE") ? "" : undefined,
+      destination: (type === "OUT" || type === "PURCHASE") ? (preselectedDestination || "") : undefined,
       supplier: type === "PURCHASE" ? "" : undefined,
     },
   });
