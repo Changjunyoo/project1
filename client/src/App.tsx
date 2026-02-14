@@ -3,6 +3,7 @@ import Inventory from "@/pages/Inventory";
 import IngredientDetail from "@/pages/IngredientDetail";
 import TransactionsList from "@/pages/TransactionsList";
 import Purchases from "@/pages/Purchases";
+import OutgoingByBranch from "@/pages/OutgoingByBranch";
 import NotFound from "@/pages/not-found";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/inventory/:id" component={IngredientDetail} />
       <Route path="/transactions" component={TransactionsList} />
       <Route path="/purchases" component={Purchases} />
+      <Route path="/outgoing" component={OutgoingByBranch} />
       <Route component={NotFound} />
     </Switch>
   );
