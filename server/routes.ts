@@ -167,5 +167,48 @@ export async function registerRoutes(
     }
   });
 
+  // Branch Routes
+  app.get(api.branches.list.path, async (req, res) => {
+    const branches = await storage.getBranches();
+    res.json(branches);
+  });
+
+  app.post(api.branches.create.path, async (req, res) => {
+    try {
+      const input = api.branches.create.input.parse(req.body);
+      const branch = await storage.createBranch(input);
+      res.status(201).json(branch);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      throw err;
+    }
+  });
+
+  app.patch(api.branches.update.path, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const input = api.branches.update.input.parse(req.body);
+      const existing = await storage.getBranch(id);
+      if (!existing) return res.status(404).json({ message: "Branch not found" });
+      const updated = await storage.updateBranch(id, input);
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.branches.delete.path, async (req, res) => {
+    const id = Number(req.params.id);
+    const existing = await storage.getBranch(id);
+    if (!existing) return res.status(404).json({ message: "Branch not found" });
+    await storage.deleteBranch(id);
+    res.status(204).send();
+  });
+
   return httpServer;
 }

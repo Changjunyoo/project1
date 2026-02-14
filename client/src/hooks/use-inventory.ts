@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import { type Ingredient, type CreateIngredientRequest, type UpdateIngredientRequest, type Transaction, type CreateTransactionRequest } from "@shared/schema";
+import { type Ingredient, type CreateIngredientRequest, type UpdateIngredientRequest, type Transaction, type CreateTransactionRequest, type Branch, type InsertBranch } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================
@@ -117,6 +117,90 @@ export function useTransactions(ingredientId?: number) {
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch transactions");
       return api.transactions.list.responses[200].parse(await res.json());
+    },
+  });
+}
+
+// ============================================
+// BRANCHES
+// ============================================
+
+export function useBranches() {
+  return useQuery({
+    queryKey: [api.branches.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.branches.list.path);
+      if (!res.ok) throw new Error("Failed to fetch branches");
+      return res.json() as Promise<Branch[]>;
+    },
+  });
+}
+
+export function useCreateBranch() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: InsertBranch) => {
+      const res = await fetch(api.branches.create.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create branch");
+      return res.json() as Promise<Branch>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.branches.list.path] });
+      toast({ title: "완료", description: "지점이 추가되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useUpdateBranch() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: number } & Partial<InsertBranch>) => {
+      const url = buildUrl(api.branches.update.path, { id });
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update branch");
+      return res.json() as Promise<Branch>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.branches.list.path] });
+      toast({ title: "완료", description: "지점 정보가 수정되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useDeleteBranch() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.branches.delete.path, { id });
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete branch");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.branches.list.path] });
+      toast({ title: "완료", description: "지점이 삭제되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
     },
   });
 }

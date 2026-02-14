@@ -3,11 +3,14 @@ import { db } from "./db";
 import {
   ingredients,
   inventoryTransactions,
+  branches,
   type Ingredient,
   type InsertIngredient,
   type Transaction,
   type InsertTransaction,
-  type CreateTransactionRequest
+  type CreateTransactionRequest,
+  type Branch,
+  type InsertBranch,
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -22,6 +25,13 @@ export interface IStorage {
   // Transactions & Stock Management
   getTransactions(ingredientId?: number): Promise<Transaction[]>;
   createTransaction(transaction: CreateTransactionRequest): Promise<Transaction>;
+
+  // Branches
+  getBranches(): Promise<Branch[]>;
+  getBranch(id: number): Promise<Branch | undefined>;
+  createBranch(branch: InsertBranch): Promise<Branch>;
+  updateBranch(id: number, updates: Partial<InsertBranch>): Promise<Branch>;
+  deleteBranch(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -104,6 +114,31 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return transaction;
+  }
+
+  // === BRANCHES ===
+
+  async getBranches(): Promise<Branch[]> {
+    return await db.select().from(branches).orderBy(branches.name);
+  }
+
+  async getBranch(id: number): Promise<Branch | undefined> {
+    const [branch] = await db.select().from(branches).where(eq(branches.id, id));
+    return branch;
+  }
+
+  async createBranch(insertBranch: InsertBranch): Promise<Branch> {
+    const [branch] = await db.insert(branches).values(insertBranch).returning();
+    return branch;
+  }
+
+  async updateBranch(id: number, updates: Partial<InsertBranch>): Promise<Branch> {
+    const [updated] = await db.update(branches).set(updates).where(eq(branches.id, id)).returning();
+    return updated;
+  }
+
+  async deleteBranch(id: number): Promise<void> {
+    await db.delete(branches).where(eq(branches.id, id));
   }
 }
 

@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useIngredients, useCreateTransaction } from "@/hooks/use-inventory";
+import { useIngredients, useCreateTransaction, useBranches } from "@/hooks/use-inventory";
 import { createTransactionRequestSchema } from "@shared/schema";
 
 interface TransactionFormProps {
@@ -38,6 +38,7 @@ interface TransactionFormProps {
 export function TransactionForm({ type, preselectedIngredientId }: TransactionFormProps) {
   const [open, setOpen] = useState(false);
   const { data: ingredients } = useIngredients();
+  const { data: branchList } = useBranches();
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
 
   const form = useForm<z.infer<typeof createTransactionRequestSchema>>({
@@ -198,13 +199,34 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{type === "PURCHASE" ? "배송 지점" : "출고처 / 지점"}</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="예: 주방 A, 강남점" 
-                        {...field} 
-                        value={field.value ?? ""} 
-                      />
-                    </FormControl>
+                    {branchList && branchList.length > 0 ? (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value ?? ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-destination">
+                            <SelectValue placeholder="지점 선택" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {branchList.map((b) => (
+                            <SelectItem key={b.id} value={b.name}>
+                              {b.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <FormControl>
+                        <Input 
+                          placeholder="예: 주방 A, 강남점" 
+                          {...field} 
+                          value={field.value ?? ""} 
+                          data-testid="input-destination"
+                        />
+                      </FormControl>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

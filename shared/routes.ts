@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import { insertIngredientSchema, createTransactionRequestSchema, ingredients, inventoryTransactions } from './schema';
+import { insertIngredientSchema, createTransactionRequestSchema, insertBranchSchema, ingredients, inventoryTransactions, branches } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -78,6 +78,41 @@ export const api = {
         201: z.custom<typeof inventoryTransactions.$inferSelect>(),
         400: errorSchemas.validation,
         422: z.object({ message: z.string() }), // Insufficient stock error
+      },
+    },
+  },
+  branches: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/branches' as const,
+      responses: {
+        200: z.array(z.custom<typeof branches.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/branches' as const,
+      input: insertBranchSchema,
+      responses: {
+        201: z.custom<typeof branches.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/branches/:id' as const,
+      input: insertBranchSchema.partial(),
+      responses: {
+        200: z.custom<typeof branches.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/branches/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
       },
     },
   },
