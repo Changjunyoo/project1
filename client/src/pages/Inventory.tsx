@@ -4,7 +4,7 @@ import { CreateIngredientDialog } from "@/components/CreateIngredientDialog";
 import { EditIngredientDialog } from "@/components/EditIngredientDialog";
 import { TransactionForm } from "@/components/TransactionForm";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useIngredients, useDeleteIngredient } from "@/hooks/use-inventory";
+import { useIngredients, useDeleteIngredient, useUpdateIngredient } from "@/hooks/use-inventory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -24,13 +24,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, MoreVertical, Trash2, History, X } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Search, MoreVertical, Trash2, History, X, Pencil, Check } from "lucide-react";
 import { Link } from "wouter";
 import { INGREDIENT_CATEGORIES } from "@shared/schema";
 
 export default function Inventory() {
   const { data: ingredients, isLoading } = useIngredients();
   const { mutate: deleteIngredient } = useDeleteIngredient();
+  const { mutateAsync: updateIngredient } = useUpdateIngredient();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
@@ -39,13 +45,13 @@ export default function Inventory() {
 
   const uniqueBrands = useMemo(() => {
     if (!ingredients) return [];
-    const brands = [...new Set(ingredients.map(i => i.brand).filter(Boolean))] as string[];
+    const brands = Array.from(new Set(ingredients.map(i => i.brand).filter(Boolean))) as string[];
     return brands.sort();
   }, [ingredients]);
 
   const uniqueOrigins = useMemo(() => {
     if (!ingredients) return [];
-    const origins = [...new Set(ingredients.map(i => i.origin).filter(Boolean))] as string[];
+    const origins = Array.from(new Set(ingredients.map(i => i.origin).filter(Boolean))) as string[];
     return origins.sort();
   }, [ingredients]);
 
@@ -244,24 +250,18 @@ export default function Inventory() {
                         </Link>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
-                        {item.category ? (
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="p-0 h-auto text-muted-foreground"
-                            onClick={() => setCategoryFilter(item.category!)}
-                            data-testid={`cell-category-${item.id}`}
-                          >
-                            {item.category}
-                          </Button>
-                        ) : "-"}
+                        <EditableCategoryCell
+                          ingredient={item}
+                          onUpdate={updateIngredient}
+                          onFilter={setCategoryFilter}
+                        />
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
                         {item.brand ? (
                           <Button
-                            variant="link"
+                            variant="ghost"
                             size="sm"
-                            className="p-0 h-auto text-muted-foreground"
+                            className="p-0 h-auto text-muted-foreground underline-offset-2 hover:underline"
                             onClick={() => setBrandFilter(item.brand!)}
                             data-testid={`cell-brand-${item.id}`}
                           >
@@ -270,17 +270,12 @@ export default function Inventory() {
                         ) : "-"}
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
-                        {item.origin ? (
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="p-0 h-auto text-muted-foreground"
-                            onClick={() => setOriginFilter(item.origin!)}
-                            data-testid={`cell-origin-${item.id}`}
-                          >
-                            {item.origin}
-                          </Button>
-                        ) : "-"}
+                        <EditableOriginCell
+                          ingredient={item}
+                          allIngredients={ingredients || []}
+                          onUpdate={updateIngredient}
+                          onFilter={setOriginFilter}
+                        />
                       </td>
                       <td className="px-6 py-4">
                         <StatusBadge current={item.currentStock} min={item.minStockLevel} />
@@ -345,6 +340,130 @@ export default function Inventory() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function EditableCategoryCell({ ingredient, onUpdate, onFilter }: {
+  ingredient: { id: number; category: string | null };
+  onUpdate: (data: { id: number; category: string }) => Promise<any>;
+  onFilter: (val: string) => void;
+}) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+
+  const handleSelect = async (cat: string) => {
+    await onUpdate({ id: ingredient.id, category: cat });
+    setPopoverOpen(false);
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="p-0 h-auto text-muted-foreground underline-offset-2 hover:underline"
+        onClick={() => ingredient.category && onFilter(ingredient.category)}
+        data-testid={`cell-category-${ingredient.id}`}
+      >
+        {ingredient.category || "-"}
+      </Button>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-5 w-5 invisible group-hover:visible" data-testid={`button-edit-category-${ingredient.id}`}>
+            <Pencil className="w-3 h-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-2" align="start">
+          <div className="flex gap-1">
+            {INGREDIENT_CATEGORIES.map((cat) => (
+              <Button
+                key={cat}
+                variant={ingredient.category === cat ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleSelect(cat)}
+                data-testid={`popover-category-${cat}-${ingredient.id}`}
+              >
+                {cat}
+              </Button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+function EditableOriginCell({ ingredient, allIngredients, onUpdate, onFilter }: {
+  ingredient: { id: number; origin: string | null };
+  allIngredients: { origin: string | null }[];
+  onUpdate: (data: { id: number; origin: string }) => Promise<any>;
+  onFilter: (val: string) => void;
+}) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [editValue, setEditValue] = useState(ingredient.origin || "");
+
+  const existingOrigins = useMemo(() => {
+    return Array.from(new Set(allIngredients.map(i => i.origin).filter(Boolean))).sort() as string[];
+  }, [allIngredients]);
+
+  const handleSave = async () => {
+    if (editValue.trim()) {
+      await onUpdate({ id: ingredient.id, origin: editValue.trim() });
+    }
+    setPopoverOpen(false);
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="p-0 h-auto text-muted-foreground underline-offset-2 hover:underline"
+        onClick={() => ingredient.origin && onFilter(ingredient.origin)}
+        data-testid={`cell-origin-${ingredient.id}`}
+      >
+        {ingredient.origin || "-"}
+      </Button>
+      <Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); if (open) setEditValue(ingredient.origin || ""); }}>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-5 w-5 invisible group-hover:visible" data-testid={`button-edit-origin-${ingredient.id}`}>
+            <Pencil className="w-3 h-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-3" align="start">
+          <div className="space-y-2">
+            <div className="flex gap-1">
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                placeholder="원산지 입력"
+                className="text-sm"
+                data-testid={`input-edit-origin-${ingredient.id}`}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+              />
+              <Button size="icon" onClick={handleSave} data-testid={`button-save-origin-${ingredient.id}`}>
+                <Check className="w-3 h-3" />
+              </Button>
+            </div>
+            {existingOrigins.length > 0 && (
+              <div className="flex gap-1 flex-wrap">
+                {existingOrigins.map((o) => (
+                  <Button
+                    key={o}
+                    variant={editValue === o ? "default" : "outline"}
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => setEditValue(o)}
+                    data-testid={`popover-origin-${o}-${ingredient.id}`}
+                  >
+                    {o}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
