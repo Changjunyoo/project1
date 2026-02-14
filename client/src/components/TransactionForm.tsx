@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -99,6 +99,19 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
   const inlineFilteredIngredients = ingredients?.filter(i =>
     ingredientSearchTerm && i.name.toLowerCase().includes(ingredientSearchTerm.toLowerCase())
   );
+
+  const ingredientSearchRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ingredientSearchRef.current && !ingredientSearchRef.current.contains(e.target as Node)) {
+        setShowIngredientResults(false);
+      }
+    };
+    if (showIngredientResults) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showIngredientResults]);
 
   const filteredBranches = branchList?.filter(b =>
     b.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -451,7 +464,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
 
             <FormField
               control={form.control}
@@ -473,7 +486,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                       }
                     </Button>
                   ) : (
-                    <div className="relative" style={{ zIndex: showIngredientResults ? 100 : "auto" }}>
+                    <div ref={ingredientSearchRef} className="relative" style={{ zIndex: showIngredientResults ? 100 : "auto" }}>
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                       <Input
                         placeholder="식자재 검색..."
@@ -501,7 +514,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                               <button
                                 key={ing.id}
                                 type="button"
-                                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover-elevate ${selectedIngredientId === ing.id ? "bg-primary/10 text-primary font-medium" : "text-foreground"}`}
+                                className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between hover-elevate ${selectedIngredientId === ing.id ? "bg-primary/10 text-primary font-medium" : "text-foreground"}`}
+                                style={{ minHeight: "48px" }}
                                 onClick={() => {
                                   form.setValue("ingredientId", ing.id);
                                   setIngredientSearchTerm(ing.name);
@@ -509,8 +523,11 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                                 }}
                                 data-testid={`button-inline-ingredient-${ing.id}`}
                               >
-                                <span>{ing.name} <span className="text-muted-foreground text-xs">(현재: {ing.currentStock} {ing.unit})</span></span>
-                                {selectedIngredientId === ing.id && <Check className="w-3 h-3 text-primary" />}
+                                <div className="flex flex-col gap-1">
+                                  <span>{ing.name}</span>
+                                  <span className="text-muted-foreground text-xs">현재: {ing.currentStock} {ing.unit}</span>
+                                </div>
+                                {selectedIngredientId === ing.id && <Check className="w-4 h-4 text-primary" />}
                               </button>
                             ))
                           ) : ingredientSearchTerm ? (
