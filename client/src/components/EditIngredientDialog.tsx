@@ -95,7 +95,7 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                 <FormItem>
                   <FormLabel>품목명</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} data-testid="input-name-edit" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,33 +109,8 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                 <FormItem>
                   <FormLabel>브랜드</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value || ''} />
+                    <Input {...field} value={field.value || ''} data-testid="input-brand-edit" />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>카테고리</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-category-edit">
-                        <SelectValue placeholder="카테고리 선택" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {INGREDIENT_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -149,7 +124,7 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                   <FormItem>
                     <FormLabel>단위</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} data-testid="input-unit-edit" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,7 +138,7 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                   <FormItem>
                     <FormLabel>최소 재고</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                      <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} data-testid="input-min-stock-edit" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -171,8 +146,33 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
               />
             </div>
 
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>카테고리</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-category-edit">
+                        <SelectValue placeholder="카테고리 선택" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent side="top">
+                      {INGREDIENT_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="flex justify-end pt-4">
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending} data-testid="button-submit-edit">
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 저장하기
               </Button>

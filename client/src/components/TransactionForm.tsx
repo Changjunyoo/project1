@@ -121,7 +121,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                         <SelectValue placeholder="식자재 선택" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent side="bottom" align="start">
+                    <SelectContent side="top" align="start">
                       {ingredients?.map((ing) => (
                         <SelectItem key={ing.id} value={ing.id.toString()}>
                           {ing.name} (현재: {ing.currentStock} {ing.unit})
@@ -209,7 +209,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                             <SelectValue placeholder="지점 선택" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent side="bottom" align="start">
+                        <SelectContent side="top" align="start">
                           {branchList.map((b) => (
                             <SelectItem key={b.id} value={b.name}>
                               {b.name}

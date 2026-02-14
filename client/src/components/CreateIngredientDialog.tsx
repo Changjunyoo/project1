@@ -81,7 +81,7 @@ export function CreateIngredientDialog() {
                 <FormItem>
                   <FormLabel>품목명</FormLabel>
                   <FormControl>
-                    <Input placeholder="예: 소고기 등심" {...field} />
+                    <Input placeholder="예: 소고기 등심" {...field} data-testid="input-name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -95,33 +95,8 @@ export function CreateIngredientDialog() {
                 <FormItem>
                   <FormLabel>브랜드</FormLabel>
                   <FormControl>
-                    <Input placeholder="예: CJ제일제당" {...field} value={field.value || ''} />
+                    <Input placeholder="예: CJ제일제당" {...field} value={field.value || ''} data-testid="input-brand" />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>카테고리</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-category">
-                        <SelectValue placeholder="카테고리 선택" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {INGREDIENT_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat} data-testid={`select-category-${cat}`}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -135,7 +110,7 @@ export function CreateIngredientDialog() {
                   <FormItem>
                     <FormLabel>단위</FormLabel>
                     <FormControl>
-                      <Input placeholder="kg, 박스, 개..." {...field} />
+                      <Input placeholder="kg, 박스, 개..." {...field} data-testid="input-unit" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -149,7 +124,7 @@ export function CreateIngredientDialog() {
                   <FormItem>
                     <FormLabel>최소 재고 알림 기준</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                      <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} data-testid="input-min-stock" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -157,8 +132,33 @@ export function CreateIngredientDialog() {
               />
             </div>
 
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>카테고리</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-category">
+                        <SelectValue placeholder="카테고리 선택" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent side="top">
+                      {INGREDIENT_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat} data-testid={`select-category-${cat}`}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="flex justify-end pt-4">
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending} data-testid="button-submit-ingredient">
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 식자재 등록
               </Button>
