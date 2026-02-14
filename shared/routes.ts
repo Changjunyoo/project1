@@ -77,7 +77,25 @@ export const api = {
       responses: {
         201: z.custom<typeof inventoryTransactions.$inferSelect>(),
         400: errorSchemas.validation,
-        422: z.object({ message: z.string() }), // Insufficient stock error
+        422: z.object({ message: z.string() }),
+      },
+    },
+    confirm: {
+      method: 'PATCH' as const,
+      path: '/api/transactions/:id/confirm' as const,
+      responses: {
+        200: z.custom<typeof inventoryTransactions.$inferSelect>(),
+        404: errorSchemas.notFound,
+        422: z.object({ message: z.string() }),
+      },
+    },
+    reject: {
+      method: 'PATCH' as const,
+      path: '/api/transactions/:id/reject' as const,
+      responses: {
+        200: z.custom<typeof inventoryTransactions.$inferSelect>(),
+        404: errorSchemas.notFound,
+        422: z.object({ message: z.string() }),
       },
     },
   },

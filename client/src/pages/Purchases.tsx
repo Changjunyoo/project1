@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { useTransactions, useIngredients, useUpdateIngredient } from "@/hooks/use-inventory";
+import { useTransactions, useIngredients, useUpdateIngredient, useConfirmTransaction, useRejectTransaction } from "@/hooks/use-inventory";
 import { TransactionForm } from "@/components/TransactionForm";
 import { format } from "date-fns";
-import { ShoppingCart, Search, X, Pencil, Check } from "lucide-react";
+import { ShoppingCart, Search, X, Pencil, Check, XCircle, CheckCircle, Clock } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -24,6 +24,8 @@ export default function Purchases() {
   const { data: transactions, isLoading } = useTransactions();
   const { data: ingredients } = useIngredients();
   const { mutateAsync: updateIngredient } = useUpdateIngredient();
+  const { mutate: confirmTransaction, isPending: isConfirming } = useConfirmTransaction();
+  const { mutate: rejectTransaction, isPending: isRejecting } = useRejectTransaction();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [originFilter, setOriginFilter] = useState<string>("all");
@@ -196,13 +198,14 @@ export default function Purchases() {
                   <th className="px-6 py-4">합계</th>
                   <th className="px-6 py-4">사입처</th>
                   <th className="px-6 py-4">배송 지점</th>
+                  <th className="px-6 py-4">배송 확인</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+                  <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
                 ) : filteredTransactions.length === 0 ? (
-                  <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">등록된 사입 내역이 없습니다.</td></tr>
+                  <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">등록된 사입 내역이 없습니다.</td></tr>
                 ) : (
                   filteredTransactions.map((tx) => {
                     const ingredient = ingredients?.find(i => i.id === tx.ingredientId);
@@ -236,6 +239,47 @@ export default function Purchases() {
                         </td>
                         <td className="px-6 py-4 text-muted-foreground">
                           {tx.destination || "-"}
+                        </td>
+                        <td className="px-6 py-4">
+                          {tx.confirmed === "PENDING" ? (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-green-600 hover:text-green-700"
+                                onClick={() => confirmTransaction(tx.id)}
+                                disabled={isConfirming || isRejecting}
+                                data-testid={`button-confirm-${tx.id}`}
+                              >
+                                <CheckCircle className="w-5 h-5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-600"
+                                onClick={() => rejectTransaction(tx.id)}
+                                disabled={isConfirming || isRejecting}
+                                data-testid={`button-reject-${tx.id}`}
+                              >
+                                <XCircle className="w-5 h-5" />
+                              </Button>
+                            </div>
+                          ) : tx.confirmed === "CONFIRMED" ? (
+                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" data-testid={`status-confirmed-${tx.id}`}>
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              확인됨
+                            </Badge>
+                          ) : tx.confirmed === "REJECTED" ? (
+                            <Badge variant="secondary" className="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" data-testid={`status-rejected-${tx.id}`}>
+                              <XCircle className="w-3 h-3 mr-1" />
+                              거부됨
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="gap-1" data-testid={`status-pending-${tx.id}`}>
+                              <Clock className="w-3 h-3" />
+                              대기중
+                            </Badge>
+                          )}
                         </td>
                       </tr>
                     );

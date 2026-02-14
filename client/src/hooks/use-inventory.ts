@@ -205,6 +205,55 @@ export function useDeleteBranch() {
   });
 }
 
+export function useConfirmTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.transactions.confirm.path, { id });
+      const res = await fetch(url, { method: "PATCH" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to confirm");
+      }
+      return res.json() as Promise<Transaction>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.ingredients.list.path] });
+      toast({ title: "완료", description: "배송 확인 완료 — 재고에 반영되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useRejectTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.transactions.reject.path, { id });
+      const res = await fetch(url, { method: "PATCH" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to reject");
+      }
+      return res.json() as Promise<Transaction>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
+      toast({ title: "완료", description: "배송이 거부되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useCreateTransaction() {
   const queryClient = useQueryClient();
   const { toast } = useToast();

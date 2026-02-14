@@ -24,7 +24,10 @@ export interface IStorage {
 
   // Transactions & Stock Management
   getTransactions(ingredientId?: number): Promise<Transaction[]>;
+  getTransaction(id: number): Promise<Transaction | undefined>;
   createTransaction(transaction: CreateTransactionRequest): Promise<Transaction>;
+  confirmTransaction(id: number): Promise<Transaction>;
+  rejectTransaction(id: number): Promise<Transaction>;
 
   // Branches
   getBranches(): Promise<Branch[]>;
@@ -79,15 +82,25 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(inventoryTransactions.createdAt));
   }
 
+  async getTransaction(id: number): Promise<Transaction | undefined> {
+    const [transaction] = await db.select().from(inventoryTransactions).where(eq(inventoryTransactions.id, id));
+    return transaction;
+  }
+
   async createTransaction(txRequest: CreateTransactionRequest): Promise<Transaction> {
-    // This should ideally be a transaction to ensure data integrity
-    // 1. Get current stock
     const ingredient = await this.getIngredient(txRequest.ingredientId);
     if (!ingredient) {
       throw new Error("Ingredient not found");
     }
 
-    // 2. Calculate new stock
+    if (txRequest.type === "PURCHASE") {
+      const [transaction] = await db
+        .insert(inventoryTransactions)
+        .values({ ...txRequest, confirmed: "PENDING" })
+        .returning();
+      return transaction;
+    }
+
     let newStock = ingredient.currentStock;
     if (txRequest.type === "IN") {
       newStock += txRequest.quantity;
@@ -98,22 +111,57 @@ export class DatabaseStorage implements IStorage {
       newStock -= txRequest.quantity;
     }
 
-    // 3. Update ingredient stock
     await db
       .update(ingredients)
-      .set({ 
-        currentStock: newStock,
-        lastUpdated: new Date()
-      })
+      .set({ currentStock: newStock, lastUpdated: new Date() })
       .where(eq(ingredients.id, txRequest.ingredientId));
 
-    // 4. Create transaction record
     const [transaction] = await db
       .insert(inventoryTransactions)
       .values(txRequest)
       .returning();
 
     return transaction;
+  }
+
+  async confirmTransaction(id: number): Promise<Transaction> {
+    const tx = await this.getTransaction(id);
+    if (!tx) throw new Error("Transaction not found");
+    if (tx.type !== "PURCHASE" || tx.confirmed !== "PENDING") {
+      throw new Error("Transaction cannot be confirmed");
+    }
+
+    const ingredient = await this.getIngredient(tx.ingredientId);
+    if (!ingredient) throw new Error("Ingredient not found");
+
+    await db
+      .update(ingredients)
+      .set({ currentStock: ingredient.currentStock + tx.quantity, lastUpdated: new Date() })
+      .where(eq(ingredients.id, tx.ingredientId));
+
+    const [updated] = await db
+      .update(inventoryTransactions)
+      .set({ confirmed: "CONFIRMED" })
+      .where(eq(inventoryTransactions.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  async rejectTransaction(id: number): Promise<Transaction> {
+    const tx = await this.getTransaction(id);
+    if (!tx) throw new Error("Transaction not found");
+    if (tx.type !== "PURCHASE" || tx.confirmed !== "PENDING") {
+      throw new Error("Transaction cannot be rejected");
+    }
+
+    const [updated] = await db
+      .update(inventoryTransactions)
+      .set({ confirmed: "REJECTED" })
+      .where(eq(inventoryTransactions.id, id))
+      .returning();
+
+    return updated;
   }
 
   // === BRANCHES ===
