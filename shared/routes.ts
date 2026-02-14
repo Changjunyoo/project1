@@ -44,7 +44,7 @@ export const api = {
     update: {
       method: 'PATCH' as const,
       path: '/api/ingredients/:id' as const,
-      input: insertIngredientSchema.partial(),
+      input: insertIngredientSchema.partial().extend({ currentStock: z.number().int().min(0).optional() }),
       responses: {
         200: z.custom<typeof ingredients.$inferSelect>(),
         404: errorSchemas.notFound,

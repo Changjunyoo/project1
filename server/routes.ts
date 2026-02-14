@@ -118,7 +118,13 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Ingredient not found" });
       }
 
-      const updated = await storage.updateIngredient(id, input);
+      const { currentStock, ...rest } = input;
+      const updates: any = { ...rest };
+      if (currentStock !== undefined) {
+        updates.currentStock = currentStock;
+      }
+
+      const updated = await storage.updateIngredient(id, updates);
       res.json(updated);
     } catch (err) {
       if (err instanceof z.ZodError) {

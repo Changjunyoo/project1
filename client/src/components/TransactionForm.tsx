@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useIngredients, useCreateIngredient, useCreateTransaction, useBranches } from "@/hooks/use-inventory";
+import { useIngredients, useCreateIngredient, useUpdateIngredient, useCreateTransaction, useBranches } from "@/hooks/use-inventory";
 import { createTransactionRequestSchema, insertIngredientSchema, INGREDIENT_CATEGORIES } from "@shared/schema";
 
 interface TransactionFormProps {
@@ -39,6 +39,8 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
   const { data: branchList } = useBranches();
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
   const { mutateAsync: createIngredient, isPending: isCreatingIngredient } = useCreateIngredient();
+  const { mutateAsync: updateIngredient } = useUpdateIngredient();
+  const [initialStock, setInitialStock] = useState(0);
 
   const newIngredientForm = useForm<z.infer<typeof insertIngredientSchema>>({
     resolver: zodResolver(insertIngredientSchema),
@@ -156,7 +158,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
               type="button"
               variant="outline"
               className="w-full"
-              onClick={() => { setPickerMode("newIngredient"); setSearchTerm(""); newIngredientForm.reset(); }}
+              onClick={() => { setPickerMode("newIngredient"); setSearchTerm(""); newIngredientForm.reset(); setInitialStock(0); }}
               data-testid="button-add-new-ingredient"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -189,8 +191,12 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
     const onCreateIngredient = async (values: z.infer<typeof insertIngredientSchema>) => {
       try {
         const created = await createIngredient(values);
+        if (initialStock > 0) {
+          await updateIngredient({ id: created.id, currentStock: initialStock } as any);
+        }
         form.setValue("ingredientId", created.id);
         newIngredientForm.reset();
+        setInitialStock(0);
         setPickerMode("form");
       } catch (error) {
       }
@@ -279,20 +285,31 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                   </FormItem>
                 )}
               />
+              <FormField
+                control={newIngredientForm.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>단위</FormLabel>
+                    <FormControl>
+                      <Input placeholder="kg, 박스, 개..." {...field} data-testid="input-new-ingredient-unit" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={newIngredientForm.control}
-                  name="unit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>단위</FormLabel>
-                      <FormControl>
-                        <Input placeholder="kg, 박스, 개..." {...field} data-testid="input-new-ingredient-unit" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <label className="text-sm font-medium leading-none">현재 재고</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={initialStock}
+                    onChange={e => setInitialStock(parseInt(e.target.value) || 0)}
+                    data-testid="input-new-ingredient-current-stock"
+                    className="mt-2"
+                  />
+                </div>
                 <FormField
                   control={newIngredientForm.control}
                   name="minStockLevel"
