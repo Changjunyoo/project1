@@ -77,7 +77,7 @@ export default function Inventory() {
       <main className="flex-1 ml-64 p-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">식자재 관리</h1>
+            <h1 className="text-3xl font-bold text-foreground">MK</h1>
             <p className="text-muted-foreground mt-1">식자재 품목과 재고 수준을 관리합니다.</p>
           </div>
           <div className="flex items-center gap-3">
