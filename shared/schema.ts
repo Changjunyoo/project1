@@ -21,6 +21,7 @@ export const ingredients = pgTable("ingredients", {
   name: text("name").notNull(),
   brand: text("brand"),
   category: text("category"),
+  origin: text("origin"),
   unit: text("unit").notNull(), // e.g., kg, g, box, ea
   currentStock: integer("current_stock").notNull().default(0),
   minStockLevel: integer("min_stock_level").notNull().default(10),

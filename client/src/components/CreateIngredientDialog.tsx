@@ -34,6 +34,7 @@ export function CreateIngredientDialog() {
       name: "",
       brand: "",
       category: "",
+      origin: "",
       unit: "kg",
       minStockLevel: 10,
     },
@@ -116,6 +117,20 @@ export function CreateIngredientDialog() {
                         </Button>
                       ))}
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="origin"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>원산지</FormLabel>
+                  <FormControl>
+                    <Input placeholder="예: 국내산, 미국산, 호주산" {...field} value={field.value || ''} data-testid="input-origin" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -97,6 +97,7 @@ export default function Inventory() {
                   <th className="px-6 py-4">품목명</th>
                   <th className="px-6 py-4">카테고리</th>
                   <th className="px-6 py-4">브랜드</th>
+                  <th className="px-6 py-4">원산지</th>
                   <th className="px-6 py-4">상태</th>
                   <th className="px-6 py-4">현재 재고</th>
                   <th className="px-6 py-4">단위</th>
@@ -107,11 +108,11 @@ export default function Inventory() {
               <tbody className="divide-y divide-border">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">식자재 목록을 불러오는 중...</td>
+                    <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">식자재 목록을 불러오는 중...</td>
                   </tr>
                 ) : filteredIngredients?.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">검색 결과가 없습니다.</td>
+                    <td colSpan={9} className="px-6 py-8 text-center text-muted-foreground">검색 결과가 없습니다.</td>
                   </tr>
                 ) : (
                   filteredIngredients?.map((item) => (
@@ -123,6 +124,7 @@ export default function Inventory() {
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">{item.category || "-"}</td>
                       <td className="px-6 py-4 text-muted-foreground">{item.brand || "-"}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{item.origin || "-"}</td>
                       <td className="px-6 py-4">
                         <StatusBadge current={item.currentStock} min={item.minStockLevel} />
                       </td>

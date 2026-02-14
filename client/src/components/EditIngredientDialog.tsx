@@ -38,6 +38,7 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
       name: ingredient.name,
       brand: ingredient.brand || "",
       category: ingredient.category || "",
+      origin: ingredient.origin || "",
       unit: ingredient.unit,
       minStockLevel: ingredient.minStockLevel,
     },
@@ -49,6 +50,7 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
         name: ingredient.name,
         brand: ingredient.brand || "",
         category: ingredient.category || "",
+        origin: ingredient.origin || "",
         unit: ingredient.unit,
         minStockLevel: ingredient.minStockLevel,
       });
@@ -130,6 +132,20 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                         </Button>
                       ))}
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="origin"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>원산지</FormLabel>
+                  <FormControl>
+                    <Input placeholder="예: 국내산, 미국산, 호주산" {...field} value={field.value || ''} data-testid="input-origin-edit" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
