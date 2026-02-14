@@ -65,13 +65,14 @@ export default function Purchases() {
                   <th className="px-6 py-4">단가</th>
                   <th className="px-6 py-4">합계</th>
                   <th className="px-6 py-4">사입처</th>
+                  <th className="px-6 py-4">배송 지점</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
                 ) : purchaseTransactions.length === 0 ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">등록된 사입 내역이 없습니다.</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">등록된 사입 내역이 없습니다.</td></tr>
                 ) : (
                   purchaseTransactions.map((tx) => {
                     const ingredient = ingredients?.find(i => i.id === tx.ingredientId);
@@ -92,6 +93,9 @@ export default function Purchases() {
                         </td>
                         <td className="px-6 py-4 text-muted-foreground">
                           {tx.supplier || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {tx.destination || "-"}
                         </td>
                       </tr>
                     );

@@ -47,7 +47,7 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
       ingredientId: preselectedIngredientId || undefined,
       quantity: 0,
       unitPrice: (type === "IN" || type === "PURCHASE") ? 0 : undefined,
-      destination: type === "OUT" ? "" : undefined,
+      destination: (type === "OUT" || type === "PURCHASE") ? "" : undefined,
       supplier: type === "PURCHASE" ? "" : undefined,
     },
   });
@@ -198,26 +198,6 @@ export function TransactionForm({ type, preselectedIngredientId }: TransactionFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{type === "PURCHASE" ? "배송 지점" : "출고처 / 지점"}</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="예: 주방 A, 강남점" 
-                        {...field} 
-                        value={field.value ?? ""} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {type !== "OUT" && type !== "PURCHASE" && (
-              <FormField
-                control={form.control}
-                name="destination"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>출고처 / 지점</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="예: 주방 A, 강남점" 
