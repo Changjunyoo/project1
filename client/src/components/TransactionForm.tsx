@@ -232,7 +232,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setPickerMode("ingredient")} data-testid="button-back-new-ingredient">
+              <Button variant="ghost" size="icon" onClick={() => setPickerMode("form")} data-testid="button-back-new-ingredient">
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <DialogTitle>새 식자재 추가</DialogTitle>
@@ -541,10 +541,11 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                                 size="sm"
                                 className="w-full mt-1"
                                 onClick={() => {
+                                  const searchVal = ingredientSearchTerm;
                                   setShowIngredientResults(false);
-                                  setPickerMode("newIngredient");
-                                  newIngredientForm.reset({ name: ingredientSearchTerm, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10 });
                                   setInitialStock(0);
+                                  setPickerMode("newIngredient");
+                                  newIngredientForm.reset({ name: searchVal, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10 });
                                 }}
                                 data-testid="button-inline-add-ingredient"
                               >
