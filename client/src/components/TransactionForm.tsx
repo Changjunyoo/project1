@@ -159,7 +159,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
               type="button"
               variant="outline"
               className="w-full"
-              onClick={() => { setPickerMode("newIngredient"); setSearchTerm(""); newIngredientForm.reset(); setInitialStock(0); }}
+              onClick={() => { setPickerMode("newIngredient"); newIngredientForm.reset({ name: searchTerm, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10 }); setInitialStock(0); setSearchTerm(""); }}
               data-testid="button-add-new-ingredient"
             >
               <Plus className="w-4 h-4 mr-2" />
