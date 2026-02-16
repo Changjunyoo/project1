@@ -12,6 +12,7 @@ import {
   X,
   Loader2,
   Filter,
+  Search,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -47,12 +48,23 @@ export default function TransactionsList() {
   const { mutateAsync: deleteTransaction, isPending: isDeleting } = useDeleteTransaction();
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
   const [editingTx, setEditingTx] = useState<EditState | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const filteredTransactions = typeFilter === "ALL"
+  const filteredTransactions = (typeFilter === "ALL"
     ? transactions
-    : transactions?.filter(tx => tx.type === typeFilter);
+    : transactions?.filter(tx => tx.type === typeFilter)
+  )?.filter(tx => {
+    if (!searchTerm.trim()) return true;
+    const ingredient = ingredients?.find(i => i.id === tx.ingredientId);
+    const term = searchTerm.toLowerCase();
+    return (
+      (ingredient?.name || "").toLowerCase().includes(term) ||
+      (tx.destination || "").toLowerCase().includes(term) ||
+      (tx.supplier || "").toLowerCase().includes(term)
+    );
+  });
 
   const startEdit = (tx: Transaction) => {
     setEditingTx({
@@ -171,9 +183,20 @@ export default function TransactionsList() {
           </div>
         </div>
 
-        {/* Type filter */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <Filter className="w-4 h-4 text-muted-foreground" />
+        {/* Search + Type filter */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="식자재, 출고처, 사입처 검색..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="input-search-transactions"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
           {filterButtons.map((fb) => (
             <Button
               key={fb.value}
@@ -186,6 +209,7 @@ export default function TransactionsList() {
               <Badge variant="secondary" className="ml-1.5">{fb.count}</Badge>
             </Button>
           ))}
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">

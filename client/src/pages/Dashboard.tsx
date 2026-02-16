@@ -18,8 +18,9 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from "recharts";
-import { Package, AlertTriangle, ArrowUpRight, TrendingUp } from "lucide-react";
+import { Package, AlertTriangle, ArrowUpRight, ShoppingCart, TrendingUp } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale/ko";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
@@ -136,15 +137,22 @@ export default function Dashboard() {
                     const ingredient = ingredients?.find(i => i.id === tx.ingredientId);
                     return (
                       <div key={tx.id} className="flex items-start gap-4">
-                        <div className={`mt-1 p-1.5 rounded-full ${tx.type === 'IN' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-                          <ArrowUpRight className={`w-3 h-3 ${tx.type === 'IN' ? 'rotate-180' : ''}`} />
+                        <div className={`mt-1 p-1.5 rounded-full ${
+                          tx.type === 'IN' ? 'bg-green-100 text-green-600' 
+                          : tx.type === 'PURCHASE' ? 'bg-blue-100 text-blue-600' 
+                          : 'bg-orange-100 text-orange-600'
+                        }`}>
+                          {tx.type === 'PURCHASE' 
+                            ? <ShoppingCart className="w-3 h-3" />
+                            : <ArrowUpRight className={`w-3 h-3 ${tx.type === 'IN' ? 'rotate-180' : ''}`} />
+                          }
                         </div>
                         <div className="flex-1 space-y-1">
                           <p className="text-sm font-medium leading-none">
-                            {tx.type === 'IN' ? '입고' : '출고'}: {ingredient?.name}
+                            {tx.type === 'IN' ? '입고' : tx.type === 'PURCHASE' ? '사입' : '출고'}: {ingredient?.name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {tx.quantity} {ingredient?.unit} • {formatDistanceToNow(new Date(tx.createdAt!), { addSuffix: true, locale: (window as any).dateFnsLocaleKo })}
+                            {tx.quantity} {ingredient?.unit} • {formatDistanceToNow(new Date(tx.createdAt!), { addSuffix: true, locale: ko })}
                           </p>
                         </div>
                       </div>
