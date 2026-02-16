@@ -30,6 +30,8 @@ interface EditState {
   id: number;
   quantity: number;
   destination: string;
+  department: string;
+  personName: string;
 }
 
 export default function OutgoingByBranch() {
@@ -71,6 +73,8 @@ export default function OutgoingByBranch() {
       id: tx.id,
       quantity: tx.quantity,
       destination: tx.destination || "",
+      department: tx.department || "",
+      personName: tx.personName || "",
     });
   };
 
@@ -85,6 +89,8 @@ export default function OutgoingByBranch() {
         id: editingTx.id,
         quantity: editingTx.quantity,
         destination: editingTx.destination || undefined,
+        department: editingTx.department || undefined,
+        personName: editingTx.personName || undefined,
       });
       setEditingTx(null);
     } catch {
@@ -246,14 +252,16 @@ export default function OutgoingByBranch() {
                   <th className="px-6 py-4">식자재</th>
                   <th className="px-6 py-4">단위</th>
                   <th className="px-6 py-4">출고 수량</th>
+                  <th className="px-6 py-4">부서</th>
+                  <th className="px-6 py-4">담당자</th>
                   <th className="px-6 py-4 text-right">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+                  <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
                 ) : displayedTransactions.length === 0 ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">
+                  <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">
                     {selectedBranch ? `"${selectedBranch}" 지점의 출고 내역이 없습니다.` : "등록된 출고 내역이 없습니다."}
                   </td></tr>
                 ) : (
@@ -310,6 +318,30 @@ export default function OutgoingByBranch() {
                               }}
                             />
                           </td>
+                          <td className="px-6 py-3">
+                            <Input
+                              value={editingTx.department}
+                              onChange={(e) => setEditingTx({ ...editingTx, department: e.target.value })}
+                              className="h-8 w-24 text-sm"
+                              placeholder="부서"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveEdit();
+                                if (e.key === "Escape") cancelEdit();
+                              }}
+                            />
+                          </td>
+                          <td className="px-6 py-3">
+                            <Input
+                              value={editingTx.personName}
+                              onChange={(e) => setEditingTx({ ...editingTx, personName: e.target.value })}
+                              className="h-8 w-24 text-sm"
+                              placeholder="담당자"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveEdit();
+                                if (e.key === "Escape") cancelEdit();
+                              }}
+                            />
+                          </td>
                           <td className="px-6 py-3 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Button
@@ -358,6 +390,8 @@ export default function OutgoingByBranch() {
                             -{tx.quantity} {ingredient?.unit}
                           </span>
                         </td>
+                        <td className="px-6 py-4 text-muted-foreground">{tx.department || "-"}</td>
+                        <td className="px-6 py-4 text-muted-foreground">{tx.personName || "-"}</td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button
