@@ -216,7 +216,10 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                         type="number"
                         min="0"
                         {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                        value={field.value ?? ""}
+                        onChange={e => field.onChange(e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
+                        onFocus={e => e.target.select()}
+                        onBlur={e => { if (e.target.value === "") field.onChange(0); }}
                         data-testid="input-current-stock-edit"
                       />
                     </FormControl>
@@ -232,7 +235,7 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
                   <FormItem>
                     <FormLabel>최소 재고</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} data-testid="input-min-stock-edit" />
+                      <Input type="number" min="0" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? "" : parseInt(e.target.value))} onFocus={e => e.target.select()} onBlur={e => { if (e.target.value === "") field.onChange(0); }} data-testid="input-min-stock-edit" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
