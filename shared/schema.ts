@@ -105,14 +105,18 @@ export type IngredientWithNames = Ingredient & {
   originName?: string | null;
 };
 
+const dateOrString = z.union([z.string(), z.date(), z.null()]).optional().transform((val) => {
+  if (val === undefined) return undefined;
+  if (!val) return null;
+  if (val instanceof Date) return val;
+  return new Date(val);
+});
+
 export const createTransactionRequestSchema = insertTransactionSchema.extend({
   quantity: z.number().int().positive(),
   type: z.enum(["IN", "OUT", "PURCHASE"]),
-  expiryDate: z.union([z.string(), z.date(), z.null()]).optional().transform((val) => {
-    if (!val) return null;
-    if (val instanceof Date) return val;
-    return new Date(val);
-  }),
+  expiryDate: dateOrString,
+  createdAt: dateOrString,
 });
 
 export type CreateTransactionRequest = z.infer<typeof createTransactionRequestSchema>;
@@ -122,12 +126,8 @@ export const updateTransactionSchema = z.object({
   destination: z.string().optional(),
   unitPrice: z.number().int().min(0).optional().nullable(),
   supplier: z.string().optional().nullable(),
-  expiryDate: z.union([z.string(), z.date(), z.null()]).optional().transform((val) => {
-    if (val === undefined) return undefined;
-    if (!val) return null;
-    if (val instanceof Date) return val;
-    return new Date(val);
-  }),
+  expiryDate: dateOrString,
+  createdAt: dateOrString,
 });
 
 export type UpdateTransactionRequest = z.infer<typeof updateTransactionSchema>;

@@ -65,6 +65,9 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     },
   });
 
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const [receivedDate, setReceivedDate] = useState(todayStr);
+
   const form = useForm<z.infer<typeof createTransactionRequestSchema>>({
     resolver: zodResolver(createTransactionRequestSchema),
     defaultValues: {
@@ -77,15 +80,21 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     },
   });
 
+  const parsedReceivedDate = receivedDate ? new Date(receivedDate + "T00:00:00") : new Date();
+
   const onSubmit = async (values: z.infer<typeof createTransactionRequestSchema>) => {
     try {
       const submitValues = { ...values };
-      if ((type === "IN" || type === "PURCHASE") && selectedIngredient?.shelfLifeDays) {
-        submitValues.expiryDate = addDays(new Date(), selectedIngredient.shelfLifeDays).toISOString() as any;
+      if (type === "IN" || type === "PURCHASE") {
+        submitValues.createdAt = parsedReceivedDate.toISOString() as any;
+        if (selectedIngredient?.shelfLifeDays) {
+          submitValues.expiryDate = addDays(parsedReceivedDate, selectedIngredient.shelfLifeDays).toISOString() as any;
+        }
       }
       await createTransaction(submitValues);
       setOpen(false);
       form.reset();
+      setReceivedDate(todayStr);
     } catch (error) {
     }
   };
@@ -103,6 +112,10 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
   const selectedIngredientId = form.watch("ingredientId");
   const selectedIngredient = ingredients?.find(i => i.id === selectedIngredientId);
   const selectedDestination = form.watch("destination");
+
+  const computedExpiry = selectedIngredient?.shelfLifeDays
+    ? addDays(parsedReceivedDate, selectedIngredient.shelfLifeDays)
+    : null;
 
   const filteredIngredients = ingredients?.filter(i =>
     i.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -639,12 +652,26 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
               />
             )}
 
-            {(type === "IN" || type === "PURCHASE") && selectedIngredient?.shelfLifeDays && (
+            {(type === "IN" || type === "PURCHASE") && (
+              <FormItem>
+                <FormLabel>입고일</FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    value={receivedDate}
+                    onChange={(e) => setReceivedDate(e.target.value)}
+                    data-testid="input-received-date"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+
+            {(type === "IN" || type === "PURCHASE") && selectedIngredient?.shelfLifeDays && computedExpiry && (
               <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/50 rounded-md border border-border" data-testid="text-expiry-info">
                 <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <span className="text-sm text-muted-foreground">
-                  유통기한: <span className="font-medium text-foreground">{format(addDays(new Date(), selectedIngredient.shelfLifeDays), "yyyy-MM-dd")}</span>
-                  <span className="ml-1">({selectedIngredient.shelfLifeDays}일)</span>
+                  유통기한: <span className="font-medium text-foreground">{format(computedExpiry, "yyyy-MM-dd")}</span>
+                  <span className="ml-1">({selectedIngredient.shelfLifeDays}일, 입고일 기준)</span>
                 </span>
               </div>
             )}
