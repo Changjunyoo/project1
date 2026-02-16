@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { useIngredients, useTransactions } from "@/hooks/use-inventory";
 import { format } from "date-fns";
-import * as XLSX from "xlsx";
 import {
   FileSpreadsheet,
   Download,
@@ -152,11 +151,57 @@ export default function Reports() {
   const totalInQty = reportData.reduce((s, r) => s + r.totalIn, 0);
   const totalOutQty = reportData.reduce((s, r) => s + r.totalOut, 0);
 
-  // --- EXCEL EXPORT ---
+  // --- EXCEL EXPORT (SpreadsheetML XML — no external dependency) ---
+
+  // Helper: escape XML special characters
+  const escXml = (s: string | number): string => {
+    const str = String(s);
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  };
+
+  // Helper: build an XML worksheet from rows (array of objects)
+  const buildSheet = (
+    name: string,
+    rows: Record<string, string | number>[]
+  ): string => {
+    if (rows.length === 0) return "";
+    const headers = Object.keys(rows[0]);
+
+    let xml = `<Worksheet ss:Name="${escXml(name)}"><Table>`;
+
+    // Header row
+    xml += "<Row>";
+    for (const h of headers) {
+      xml += `<Cell><Data ss:Type="String">${escXml(h)}</Data></Cell>`;
+    }
+    xml += "</Row>";
+
+    // Data rows
+    for (const row of rows) {
+      xml += "<Row>";
+      for (const h of headers) {
+        const val = row[h];
+        if (val === "" || val === undefined || val === null) {
+          xml += `<Cell><Data ss:Type="String"></Data></Cell>`;
+        } else if (typeof val === "number") {
+          xml += `<Cell><Data ss:Type="Number">${val}</Data></Cell>`;
+        } else {
+          xml += `<Cell><Data ss:Type="String">${escXml(val)}</Data></Cell>`;
+        }
+      }
+      xml += "</Row>";
+    }
+
+    xml += "</Table></Worksheet>";
+    return xml;
+  };
+
   const exportToExcel = () => {
     if (!ingredients || !transactions) return;
-
-    const wb = XLSX.utils.book_new();
 
     // === Sheet 1: Summary (재고 요약) ===
     const summaryRows = reportData.map((r) => ({
@@ -187,23 +232,12 @@ export default function Reports() {
       });
     }
 
-    const ws1 = XLSX.utils.json_to_sheet(summaryRows);
-    // Set column widths
-    ws1["!cols"] = [
-      { wch: 20 }, { wch: 12 }, { wch: 8 },
-      { wch: 14 }, { wch: 12 }, { wch: 14 },
-      { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 10 },
-    ];
-    XLSX.utils.book_append_sheet(wb, ws1, "재고 요약");
-
     // === Sheet 2: Detailed transactions (입출고 상세 내역) ===
-    const detailRows: Record<string, any>[] = [];
+    const detailRows: Record<string, string | number>[] = [];
     for (const r of reportData) {
-      // Running stock calculation for this ingredient
       let runningStock = r.stockAtStart;
 
       for (const tx of r.transactions) {
-        // Calculate running stock after this transaction
         if (tx.type === "IN") {
           runningStock += tx.quantity;
         } else if (tx.type === "OUT") {
@@ -213,11 +247,7 @@ export default function Reports() {
         }
 
         const typeLabel =
-          tx.type === "IN"
-            ? "입고"
-            : tx.type === "OUT"
-            ? "출고"
-            : "사입";
+          tx.type === "IN" ? "입고" : tx.type === "OUT" ? "출고" : "사입";
 
         detailRows.push({
           "품목명": r.ingredient.name,
@@ -230,7 +260,14 @@ export default function Reports() {
           "사입처": tx.supplier || "",
           "부서": tx.department || "",
           "담당자": tx.personName || "",
-          "상태": tx.type === "PURCHASE" ? (tx.confirmed === "CONFIRMED" ? "확인됨" : tx.confirmed === "REJECTED" ? "거부됨" : "대기중") : "",
+          "상태":
+            tx.type === "PURCHASE"
+              ? tx.confirmed === "CONFIRMED"
+                ? "확인됨"
+                : tx.confirmed === "REJECTED"
+                ? "거부됨"
+                : "대기중"
+              : "",
           "거래 후 재고": Math.max(0, runningStock),
         });
       }
@@ -253,21 +290,11 @@ export default function Reports() {
       });
     }
 
-    const ws2 = XLSX.utils.json_to_sheet(detailRows);
-    ws2["!cols"] = [
-      { wch: 20 }, { wch: 18 }, { wch: 8 }, { wch: 10 },
-      { wch: 8 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
-      { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 14 },
-    ];
-    XLSX.utils.book_append_sheet(wb, ws2, "입출고 상세");
-
-    // === Sheet 3: Per-ingredient sheets (품목별 시트) ===
-    // Create one combined sheet with ingredient-level detail
-    const perIngRows: Record<string, any>[] = [];
+    // === Sheet 3: Per-ingredient detail (품목별 상세) ===
+    const perIngRows: Record<string, string | number>[] = [];
     for (const r of reportData) {
-      // Header row for this ingredient
       perIngRows.push({
-        "": `[${r.ingredient.name}] (${r.ingredient.unit})`,
+        "품목": `[${r.ingredient.name}] (${r.ingredient.unit})`,
         "날짜/시간": "",
         "유형": "",
         "변동": "",
@@ -278,9 +305,8 @@ export default function Reports() {
       });
 
       let running = r.stockAtStart;
-      // Starting stock row
       perIngRows.push({
-        "": r.ingredient.name,
+        "품목": r.ingredient.name,
         "날짜/시간": fmtDateShort(startTime) + " (시작)",
         "유형": "기초재고",
         "변동": "",
@@ -303,26 +329,29 @@ export default function Reports() {
           running += tx.quantity;
         }
 
-        const typeLabel = tx.type === "IN" ? "입고" : tx.type === "OUT" ? "출고" : "사입";
+        const typeLabel =
+          tx.type === "IN" ? "입고" : tx.type === "OUT" ? "출고" : "사입";
         const details: string[] = [];
-        if (tx.unitPrice) details.push(`단가:₩${tx.unitPrice.toLocaleString()}`);
+        if (tx.unitPrice)
+          details.push(`단가:₩${tx.unitPrice.toLocaleString()}`);
         if (tx.supplier) details.push(`사입처:${tx.supplier}`);
 
         perIngRows.push({
-          "": r.ingredient.name,
+          "품목": r.ingredient.name,
           "날짜/시간": fmtDate(new Date(tx.createdAt!)),
           "유형": typeLabel,
           "변동": change > 0 ? `+${change}` : `${change}`,
           "잔여 재고": Math.max(0, running),
           "출고처": tx.destination || "",
-          "담당자": tx.department ? `${tx.department}/${tx.personName || ""}` : (tx.personName || ""),
+          "담당자": tx.department
+            ? `${tx.department}/${tx.personName || ""}`
+            : tx.personName || "",
           "비고": details.join(", "),
         });
       }
 
-      // Ending stock row
       perIngRows.push({
-        "": r.ingredient.name,
+        "품목": r.ingredient.name,
         "날짜/시간": fmtDateShort(endTime) + " (종료)",
         "유형": "기말재고",
         "변동": "",
@@ -332,9 +361,8 @@ export default function Reports() {
         "비고": "",
       });
 
-      // Empty separator row
       perIngRows.push({
-        "": "",
+        "품목": "",
         "날짜/시간": "",
         "유형": "",
         "변동": "",
@@ -345,16 +373,32 @@ export default function Reports() {
       });
     }
 
-    const ws3 = XLSX.utils.json_to_sheet(perIngRows);
-    ws3["!cols"] = [
-      { wch: 20 }, { wch: 22 }, { wch: 10 }, { wch: 10 },
-      { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 25 },
-    ];
-    XLSX.utils.book_append_sheet(wb, ws3, "품목별 상세");
+    // Build SpreadsheetML XML
+    let xml =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<?mso-application progid="Excel.Sheet"?>\n' +
+      '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n' +
+      ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n' +
+      '<Styles><Style ss:ID="Header"><Font ss:Bold="1"/></Style></Styles>\n';
 
-    // Download
-    const fileName = `재고_리포트_${startDate}_${endDate}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    xml += buildSheet("재고 요약", summaryRows);
+    xml += buildSheet("입출고 상세", detailRows);
+    xml += buildSheet("품목별 상세", perIngRows);
+
+    xml += "</Workbook>";
+
+    // Trigger download as .xls (Excel opens SpreadsheetML XML as .xls)
+    const blob = new Blob([xml], {
+      type: "application/vnd.ms-excel;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `재고_리포트_${startDate}_${endDate}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
