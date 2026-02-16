@@ -21,20 +21,22 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCreateIngredient } from "@/hooks/use-inventory";
-import { insertIngredientSchema, INGREDIENT_CATEGORIES } from "@shared/schema";
+import { useCreateIngredient, useCategories, useOrigins } from "@/hooks/use-inventory";
+import { insertIngredientSchema } from "@shared/schema";
 
 export function CreateIngredientDialog() {
   const [open, setOpen] = useState(false);
   const { mutateAsync: createIngredient, isPending } = useCreateIngredient();
+  const { data: categories } = useCategories();
+  const { data: origins } = useOrigins();
 
   const form = useForm<z.infer<typeof insertIngredientSchema>>({
     resolver: zodResolver(insertIngredientSchema),
     defaultValues: {
       name: "",
       brand: "",
-      category: "",
-      origin: "",
+      categoryId: undefined,
+      originId: undefined,
       unit: "kg",
       minStockLevel: 10,
       shelfLifeDays: undefined,
@@ -98,23 +100,23 @@ export function CreateIngredientDialog() {
 
             <FormField
               control={form.control}
-              name="category"
+              name="categoryId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>카테고리</FormLabel>
                   <FormControl>
-                    <div className="flex gap-2">
-                      {INGREDIENT_CATEGORIES.map((cat) => (
+                    <div className="flex gap-2 flex-wrap">
+                      {categories?.map((cat) => (
                         <Button
-                          key={cat}
+                          key={cat.id}
                           type="button"
-                          variant={field.value === cat ? "default" : "outline"}
+                          variant={field.value === cat.id ? "default" : "outline"}
                           size="sm"
-                          onClick={() => field.onChange(cat)}
-                          data-testid={`button-category-${cat}`}
-                          className={field.value === cat ? "flex-1" : "flex-1"}
+                          onClick={() => field.onChange(cat.id)}
+                          data-testid={`button-category-${cat.name}`}
+                          className="flex-1"
                         >
-                          {cat}
+                          {cat.name}
                         </Button>
                       ))}
                     </div>
@@ -126,12 +128,26 @@ export function CreateIngredientDialog() {
 
             <FormField
               control={form.control}
-              name="origin"
+              name="originId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>원산지</FormLabel>
                   <FormControl>
-                    <Input placeholder="예: 국내산, 미국산, 호주산" {...field} value={field.value || ''} data-testid="input-origin" />
+                    <div className="flex gap-2 flex-wrap">
+                      {origins?.map((origin) => (
+                        <Button
+                          key={origin.id}
+                          type="button"
+                          variant={field.value === origin.id ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange(origin.id)}
+                          data-testid={`button-origin-${origin.name}`}
+                          className="flex-1"
+                        >
+                          {origin.name}
+                        </Button>
+                      ))}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

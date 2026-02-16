@@ -1,6 +1,6 @@
-
 import { z } from 'zod';
-import { insertIngredientSchema, createTransactionRequestSchema, insertBranchSchema, ingredients, inventoryTransactions, branches } from './schema';
+import { insertIngredientSchema, createTransactionRequestSchema, insertBranchSchema, insertCategorySchema, insertOriginSchema, ingredients, inventoryTransactions, branches, categories, origins } from './schema';
+import type { IngredientWithNames } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -21,14 +21,14 @@ export const api = {
       method: 'GET' as const,
       path: '/api/ingredients' as const,
       responses: {
-        200: z.array(z.custom<typeof ingredients.$inferSelect>()),
+        200: z.array(z.custom<IngredientWithNames>()),
       },
     },
     get: {
       method: 'GET' as const,
       path: '/api/ingredients/:id' as const,
       responses: {
-        200: z.custom<typeof ingredients.$inferSelect>(),
+        200: z.custom<IngredientWithNames>(),
         404: errorSchemas.notFound,
       },
     },
@@ -37,7 +37,7 @@ export const api = {
       path: '/api/ingredients' as const,
       input: insertIngredientSchema,
       responses: {
-        201: z.custom<typeof ingredients.$inferSelect>(),
+        201: z.custom<IngredientWithNames>(),
         400: errorSchemas.validation,
       },
     },
@@ -46,7 +46,7 @@ export const api = {
       path: '/api/ingredients/:id' as const,
       input: insertIngredientSchema.partial().extend({ currentStock: z.number().int().min(0).optional() }),
       responses: {
-        200: z.custom<typeof ingredients.$inferSelect>(),
+        200: z.custom<IngredientWithNames>(),
         404: errorSchemas.notFound,
       },
     },
@@ -137,6 +137,58 @@ export const api = {
     delete: {
       method: 'DELETE' as const,
       path: '/api/branches/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  categories: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/categories' as const,
+      responses: {
+        200: z.array(z.custom<typeof categories.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/categories' as const,
+      input: insertCategorySchema,
+      responses: {
+        201: z.custom<typeof categories.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/categories/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  origins: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/origins' as const,
+      responses: {
+        200: z.array(z.custom<typeof origins.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/origins' as const,
+      input: insertOriginSchema,
+      responses: {
+        201: z.custom<typeof origins.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/origins/:id' as const,
       responses: {
         204: z.void(),
         404: errorSchemas.notFound,

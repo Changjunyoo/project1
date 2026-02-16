@@ -46,7 +46,7 @@ export default function IngredientDetail() {
               </h1>
               <p className="text-muted-foreground mt-1">
                 브랜드: <span className="font-medium text-foreground">{ingredient.brand || "-"}</span> • 
-                원산지: <span className="font-medium text-foreground">{ingredient.origin || "-"}</span> • 
+                원산지: <span className="font-medium text-foreground">{ingredient.originName || "-"}</span> • 
                 기본 단위: <span className="font-medium text-foreground">{ingredient.unit}</span> • 
                 최소 재고: <span className="font-medium text-foreground">{ingredient.minStockLevel}</span>
               </p>

@@ -21,21 +21,23 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useIngredients, useUpdateIngredient } from "@/hooks/use-inventory";
-import { insertIngredientSchema, INGREDIENT_CATEGORIES, type Ingredient } from "@shared/schema";
+import { useIngredients, useUpdateIngredient, useCategories, useOrigins } from "@/hooks/use-inventory";
+import { insertIngredientSchema, type IngredientWithNames } from "@shared/schema";
 
 const editIngredientSchema = insertIngredientSchema.extend({
   currentStock: z.number().int().min(0),
 });
 
 interface EditIngredientDialogProps {
-  ingredient: Ingredient;
+  ingredient: IngredientWithNames;
 }
 
 export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) {
   const [open, setOpen] = useState(false);
   const { mutateAsync: updateIngredient, isPending } = useUpdateIngredient();
   const { data: allIngredients } = useIngredients();
+  const { data: categories } = useCategories();
+  const { data: origins } = useOrigins();
 
   const existingUnits = useMemo(() => {
     if (!allIngredients) return [];
@@ -48,8 +50,8 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
     defaultValues: {
       name: ingredient.name,
       brand: ingredient.brand || "",
-      category: ingredient.category || "",
-      origin: ingredient.origin || "",
+      categoryId: ingredient.categoryId ?? undefined,
+      originId: ingredient.originId ?? undefined,
       unit: ingredient.unit,
       currentStock: ingredient.currentStock,
       minStockLevel: ingredient.minStockLevel,
@@ -62,8 +64,8 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
       form.reset({
         name: ingredient.name,
         brand: ingredient.brand || "",
-        category: ingredient.category || "",
-        origin: ingredient.origin || "",
+        categoryId: ingredient.categoryId ?? undefined,
+        originId: ingredient.originId ?? undefined,
         unit: ingredient.unit,
         currentStock: ingredient.currentStock,
         minStockLevel: ingredient.minStockLevel,
@@ -127,23 +129,23 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
 
             <FormField
               control={form.control}
-              name="category"
+              name="categoryId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>카테고리</FormLabel>
                   <FormControl>
-                    <div className="flex gap-2">
-                      {INGREDIENT_CATEGORIES.map((cat) => (
+                    <div className="flex gap-2 flex-wrap">
+                      {categories?.map((cat) => (
                         <Button
-                          key={cat}
+                          key={cat.id}
                           type="button"
-                          variant={field.value === cat ? "default" : "outline"}
+                          variant={field.value === cat.id ? "default" : "outline"}
                           size="sm"
-                          onClick={() => field.onChange(cat)}
-                          data-testid={`button-category-edit-${cat}`}
+                          onClick={() => field.onChange(cat.id)}
+                          data-testid={`button-category-edit-${cat.name}`}
                           className="flex-1"
                         >
-                          {cat}
+                          {cat.name}
                         </Button>
                       ))}
                     </div>
@@ -155,12 +157,26 @@ export function EditIngredientDialog({ ingredient }: EditIngredientDialogProps) 
 
             <FormField
               control={form.control}
-              name="origin"
+              name="originId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>원산지</FormLabel>
                   <FormControl>
-                    <Input placeholder="예: 국내산, 미국산, 호주산" {...field} value={field.value || ''} data-testid="input-origin-edit" />
+                    <div className="flex gap-2 flex-wrap">
+                      {origins?.map((origin) => (
+                        <Button
+                          key={origin.id}
+                          type="button"
+                          variant={field.value === origin.id ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange(origin.id)}
+                          data-testid={`button-origin-edit-${origin.name}`}
+                          className="flex-1"
+                        >
+                          {origin.name}
+                        </Button>
+                      ))}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

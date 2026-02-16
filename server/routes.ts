@@ -1,4 +1,3 @@
-
 import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
@@ -9,61 +8,14 @@ async function seedDatabase() {
   const ingredients = await storage.getIngredients();
   if (ingredients.length === 0) {
     console.log("Seeding database...");
-    
-    // Create Ingredients
-    const rice = await storage.createIngredient({
-      name: "쌀 (Rice)",
-      unit: "kg",
-      minStockLevel: 20
-    });
-    
-    const kimchi = await storage.createIngredient({
-      name: "김치 (Kimchi)",
-      unit: "kg",
-      minStockLevel: 10
-    });
-    
-    const beef = await storage.createIngredient({
-      name: "소고기 (Beef)",
-      unit: "kg",
-      minStockLevel: 5
-    });
 
-    const onions = await storage.createIngredient({
-      name: "양파 (Onion)",
-      unit: "망 (Bag)",
-      minStockLevel: 3
-    });
-
-    // Add Initial Stock (IN transactions)
-    await storage.createTransaction({
-      ingredientId: rice.id,
-      type: "IN",
-      quantity: 50,
-      unitPrice: 3000
-    });
-
-    await storage.createTransaction({
-      ingredientId: kimchi.id,
-      type: "IN",
-      quantity: 30,
-      unitPrice: 5000
-    });
-    
-    await storage.createTransaction({
-      ingredientId: beef.id,
-      type: "IN",
-      quantity: 10,
-      unitPrice: 25000
-    });
-
-    // Use some stock (OUT transactions)
-    await storage.createTransaction({
-      ingredientId: rice.id,
-      type: "OUT",
-      quantity: 5,
-      destination: "강남점 (Gangnam Branch)"
-    });
+    // Seed categories
+    const catList = await storage.getCategories();
+    if (catList.length === 0) {
+      await storage.createCategory({ name: "공산품" });
+      await storage.createCategory({ name: "야채" });
+      await storage.createCategory({ name: "육류" });
+    }
 
     console.log("Database seeded successfully!");
   }
@@ -118,13 +70,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Ingredient not found" });
       }
 
-      const { currentStock, ...rest } = input;
-      const updates: any = { ...rest };
-      if (currentStock !== undefined) {
-        updates.currentStock = currentStock;
-      }
-
-      const updated = await storage.updateIngredient(id, updates);
+      const updated = await storage.updateIngredient(id, input);
       res.json(updated);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -173,7 +119,6 @@ export async function registerRoutes(
     }
   });
 
-  // Confirm/Reject Purchase Transaction
   app.patch(api.transactions.confirm.path, async (req, res) => {
     try {
       const id = Number(req.params.id);
@@ -262,6 +207,56 @@ export async function registerRoutes(
     const existing = await storage.getBranch(id);
     if (!existing) return res.status(404).json({ message: "Branch not found" });
     await storage.deleteBranch(id);
+    res.status(204).send();
+  });
+
+  // Category Routes
+  app.get(api.categories.list.path, async (req, res) => {
+    const cats = await storage.getCategories();
+    res.json(cats);
+  });
+
+  app.post(api.categories.create.path, async (req, res) => {
+    try {
+      const input = api.categories.create.input.parse(req.body);
+      const category = await storage.createCategory(input);
+      res.status(201).json(category);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.categories.delete.path, async (req, res) => {
+    const id = Number(req.params.id);
+    await storage.deleteCategory(id);
+    res.status(204).send();
+  });
+
+  // Origin Routes
+  app.get(api.origins.list.path, async (req, res) => {
+    const origs = await storage.getOrigins();
+    res.json(origs);
+  });
+
+  app.post(api.origins.create.path, async (req, res) => {
+    try {
+      const input = api.origins.create.input.parse(req.body);
+      const origin = await storage.createOrigin(input);
+      res.status(201).json(origin);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.origins.delete.path, async (req, res) => {
+    const id = Number(req.params.id);
+    await storage.deleteOrigin(id);
     res.status(204).send();
   });
 
