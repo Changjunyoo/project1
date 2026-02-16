@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Package, ArrowRightLeft, Settings, ChefHat, ShoppingCart, MapPin, Building2, GripVertical, Pencil, Check, X } from "lucide-react";
+import { LayoutDashboard, Package, ArrowRightLeft, Settings, ChefHat, ShoppingCart, MapPin, Building2, GripVertical, Pencil, Check, X, Tags } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +34,7 @@ const defaultLinks: NavLink[] = [
   { id: "purchases", href: "/purchases", label: "주문서", icon: ShoppingCart },
   { id: "outgoing", href: "/outgoing", label: "지점별 출고", icon: MapPin },
   { id: "branches", href: "/branches", label: "지점 관리", icon: Building2 },
+  { id: "categories", href: "/settings/categories", label: "카테고리/원산지", icon: Tags },
   { id: "transactions", href: "/transactions", label: "입출고 내역", icon: ArrowRightLeft },
 ];
 
