@@ -241,7 +241,7 @@ export default function Purchases() {
                           {tx.destination || "-"}
                         </td>
                         <td className="px-6 py-4">
-                          {tx.confirmed === "PENDING" ? (
+                          {(tx.confirmed === "PENDING" || tx.confirmed === null || tx.confirmed === undefined) ? (
                             <div className="flex items-center gap-1">
                               <Button
                                 variant="ghost"

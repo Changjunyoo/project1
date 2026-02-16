@@ -127,7 +127,7 @@ export class DatabaseStorage implements IStorage {
   async confirmTransaction(id: number): Promise<Transaction> {
     const tx = await this.getTransaction(id);
     if (!tx) throw new Error("Transaction not found");
-    if (tx.type !== "PURCHASE" || tx.confirmed !== "PENDING") {
+    if (tx.type !== "PURCHASE" || (tx.confirmed !== "PENDING" && tx.confirmed !== null)) {
       throw new Error("Transaction cannot be confirmed");
     }
 
@@ -151,7 +151,7 @@ export class DatabaseStorage implements IStorage {
   async rejectTransaction(id: number): Promise<Transaction> {
     const tx = await this.getTransaction(id);
     if (!tx) throw new Error("Transaction not found");
-    if (tx.type !== "PURCHASE" || tx.confirmed !== "PENDING") {
+    if (tx.type !== "PURCHASE" || (tx.confirmed !== "PENDING" && tx.confirmed !== null)) {
       throw new Error("Transaction cannot be rejected");
     }
 
