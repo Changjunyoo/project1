@@ -98,6 +98,15 @@ export const api = {
         422: z.object({ message: z.string() }),
       },
     },
+    reset: {
+      method: 'PATCH' as const,
+      path: '/api/transactions/:id/reset' as const,
+      responses: {
+        200: z.custom<typeof inventoryTransactions.$inferSelect>(),
+        404: errorSchemas.notFound,
+        422: z.object({ message: z.string() }),
+      },
+    },
   },
   branches: {
     list: {

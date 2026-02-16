@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { useTransactions, useIngredients, useUpdateIngredient, useConfirmTransaction, useRejectTransaction } from "@/hooks/use-inventory";
+import { useTransactions, useIngredients, useUpdateIngredient, useConfirmTransaction, useRejectTransaction, useResetTransaction } from "@/hooks/use-inventory";
 import { TransactionForm } from "@/components/TransactionForm";
 import { format } from "date-fns";
 import { ShoppingCart, Search, X, Pencil, Check, XCircle, CheckCircle, Clock } from "lucide-react";
@@ -26,6 +26,7 @@ export default function Purchases() {
   const { mutateAsync: updateIngredient } = useUpdateIngredient();
   const { mutate: confirmTransaction, isPending: isConfirming } = useConfirmTransaction();
   const { mutate: rejectTransaction, isPending: isRejecting } = useRejectTransaction();
+  const { mutate: resetTransaction, isPending: isResetting } = useResetTransaction();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [originFilter, setOriginFilter] = useState<string>("all");
@@ -265,15 +266,39 @@ export default function Purchases() {
                               </Button>
                             </div>
                           ) : tx.confirmed === "CONFIRMED" ? (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" data-testid={`status-confirmed-${tx.id}`}>
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              확인됨
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" data-testid={`status-confirmed-${tx.id}`}>
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                확인됨
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 invisible group-hover:visible"
+                                onClick={() => resetTransaction(tx.id)}
+                                disabled={isResetting}
+                                data-testid={`button-reset-${tx.id}`}
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </Button>
+                            </div>
                           ) : tx.confirmed === "REJECTED" ? (
-                            <Badge variant="secondary" className="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" data-testid={`status-rejected-${tx.id}`}>
-                              <XCircle className="w-3 h-3 mr-1" />
-                              거부됨
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="secondary" className="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" data-testid={`status-rejected-${tx.id}`}>
+                                <XCircle className="w-3 h-3 mr-1" />
+                                거부됨
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 invisible group-hover:visible"
+                                onClick={() => resetTransaction(tx.id)}
+                                disabled={isResetting}
+                                data-testid={`button-reset-${tx.id}`}
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </Button>
+                            </div>
                           ) : (
                             <Badge variant="secondary" className="gap-1" data-testid={`status-pending-${tx.id}`}>
                               <Clock className="w-3 h-3" />

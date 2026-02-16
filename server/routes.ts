@@ -206,6 +206,22 @@ export async function registerRoutes(
     }
   });
 
+  app.patch(api.transactions.reset.path, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const transaction = await storage.resetTransaction(id);
+      res.json(transaction);
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message === "Transaction not found") {
+          return res.status(404).json({ message: err.message });
+        }
+        return res.status(422).json({ message: err.message });
+      }
+      throw err;
+    }
+  });
+
   // Branch Routes
   app.get(api.branches.list.path, async (req, res) => {
     const branches = await storage.getBranches();

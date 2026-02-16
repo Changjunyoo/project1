@@ -28,6 +28,7 @@ export interface IStorage {
   createTransaction(transaction: CreateTransactionRequest): Promise<Transaction>;
   confirmTransaction(id: number): Promise<Transaction>;
   rejectTransaction(id: number): Promise<Transaction>;
+  resetTransaction(id: number): Promise<Transaction>;
 
   // Branches
   getBranches(): Promise<Branch[]>;
@@ -158,6 +159,34 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(inventoryTransactions)
       .set({ confirmed: "REJECTED" })
+      .where(eq(inventoryTransactions.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  async resetTransaction(id: number): Promise<Transaction> {
+    const tx = await this.getTransaction(id);
+    if (!tx) throw new Error("Transaction not found");
+    if (tx.type !== "PURCHASE") {
+      throw new Error("Only purchase transactions can be reset");
+    }
+    if (tx.confirmed !== "CONFIRMED" && tx.confirmed !== "REJECTED") {
+      throw new Error("Transaction is already pending");
+    }
+
+    if (tx.confirmed === "CONFIRMED") {
+      const ingredient = await this.getIngredient(tx.ingredientId);
+      if (!ingredient) throw new Error("Ingredient not found");
+      await db
+        .update(ingredients)
+        .set({ currentStock: Math.max(0, ingredient.currentStock - tx.quantity), lastUpdated: new Date() })
+        .where(eq(ingredients.id, tx.ingredientId));
+    }
+
+    const [updated] = await db
+      .update(inventoryTransactions)
+      .set({ confirmed: "PENDING" })
       .where(eq(inventoryTransactions.id, id))
       .returning();
 
