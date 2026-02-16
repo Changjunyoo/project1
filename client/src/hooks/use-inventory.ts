@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import { type IngredientWithNames, type CreateIngredientRequest, type UpdateIngredientRequest, type Transaction, type CreateTransactionRequest, type Branch, type InsertBranch, type Category, type InsertCategory, type Origin, type InsertOrigin } from "@shared/schema";
+import { type IngredientWithNames, type CreateIngredientRequest, type UpdateIngredientRequest, type Transaction, type CreateTransactionRequest, type UpdateTransactionRequest, type Branch, type InsertBranch, type Category, type InsertCategory, type Origin, type InsertOrigin } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================
@@ -305,6 +305,59 @@ export function useCreateTransaction() {
     onError: (error) => {
       toast({ title: "Transaction Failed", description: error.message, variant: "destructive" });
     }
+  });
+}
+
+export function useUpdateTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: number } & UpdateTransactionRequest) => {
+      const url = buildUrl(api.transactions.update.path, { id });
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update transaction");
+      }
+      return res.json() as Promise<Transaction>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.ingredients.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
+      toast({ title: "완료", description: "출고 내역이 수정되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.transactions.delete.path, { id });
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete transaction");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.ingredients.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.transactions.list.path] });
+      toast({ title: "완료", description: "출고 내역이 삭제되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
   });
 }
 

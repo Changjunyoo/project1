@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertIngredientSchema, createTransactionRequestSchema, insertBranchSchema, insertCategorySchema, insertOriginSchema, ingredients, inventoryTransactions, branches, categories, origins } from './schema';
+import { insertIngredientSchema, createTransactionRequestSchema, updateTransactionSchema, insertBranchSchema, insertCategorySchema, insertOriginSchema, ingredients, inventoryTransactions, branches, categories, origins } from './schema';
 import type { IngredientWithNames } from './schema';
 
 export const errorSchemas = {
@@ -103,6 +103,26 @@ export const api = {
       path: '/api/transactions/:id/reset' as const,
       responses: {
         200: z.custom<typeof inventoryTransactions.$inferSelect>(),
+        404: errorSchemas.notFound,
+        422: z.object({ message: z.string() }),
+      },
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/transactions/:id' as const,
+      input: updateTransactionSchema,
+      responses: {
+        200: z.custom<typeof inventoryTransactions.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+        422: z.object({ message: z.string() }),
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/transactions/:id' as const,
+      responses: {
+        204: z.void(),
         404: errorSchemas.notFound,
         422: z.object({ message: z.string() }),
       },
