@@ -297,5 +297,55 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Department Routes
+  app.get(api.departments.list.path, async (req, res) => {
+    const depts = await storage.getDepartments();
+    res.json(depts);
+  });
+
+  app.post(api.departments.create.path, async (req, res) => {
+    try {
+      const input = api.departments.create.input.parse(req.body);
+      const department = await storage.createDepartment(input);
+      res.status(201).json(department);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.departments.delete.path, async (req, res) => {
+    const id = Number(req.params.id);
+    await storage.deleteDepartment(id);
+    res.status(204).send();
+  });
+
+  // Person Routes
+  app.get(api.persons.list.path, async (req, res) => {
+    const ppl = await storage.getPersons();
+    res.json(ppl);
+  });
+
+  app.post(api.persons.create.path, async (req, res) => {
+    try {
+      const input = api.persons.create.input.parse(req.body);
+      const person = await storage.createPerson(input);
+      res.status(201).json(person);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.persons.delete.path, async (req, res) => {
+    const id = Number(req.params.id);
+    await storage.deletePerson(id);
+    res.status(204).send();
+  });
+
   return httpServer;
 }
