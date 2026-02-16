@@ -6,6 +6,7 @@ import Purchases from "@/pages/Purchases";
 import OutgoingByBranch from "@/pages/OutgoingByBranch";
 import BranchManagement from "@/pages/BranchManagement";
 import CategoryOriginManagement from "@/pages/CategoryOriginManagement";
+import Reports from "@/pages/Reports";
 import NotFound from "@/pages/not-found";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/outgoing" component={OutgoingByBranch} />
       <Route path="/branches" component={BranchManagement} />
       <Route path="/settings/categories" component={CategoryOriginManagement} />
+      <Route path="/reports" component={Reports} />
       <Route component={NotFound} />
     </Switch>
   );

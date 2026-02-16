@@ -84,16 +84,25 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     },
   });
 
-  const parsedReceivedDate = receivedDate ? new Date(receivedDate + "T00:00:00") : new Date();
+  // Build a date that preserves the chosen date but uses current time
+  const buildDateWithCurrentTime = (dateStr: string): Date => {
+    const now = new Date();
+    const [year, month, day] = dateStr.split("-").map(Number);
+    // Use local date parts with current time
+    return new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
+  };
+
+  const parsedReceivedDate = receivedDate ? buildDateWithCurrentTime(receivedDate) : new Date();
 
   const onSubmit = async (values: z.infer<typeof createTransactionRequestSchema>) => {
     try {
       const submitValues = { ...values };
-      if (type === "IN" || type === "PURCHASE") {
-        submitValues.createdAt = parsedReceivedDate.toISOString() as any;
-        if (selectedIngredient?.shelfLifeDays) {
-          submitValues.expiryDate = addDays(parsedReceivedDate, selectedIngredient.shelfLifeDays).toISOString() as any;
-        }
+      // Always set createdAt with accurate time for all transaction types
+      const txDate = buildDateWithCurrentTime(receivedDate);
+      submitValues.createdAt = txDate.toISOString() as any;
+
+      if ((type === "IN" || type === "PURCHASE") && selectedIngredient?.shelfLifeDays) {
+        submitValues.expiryDate = addDays(parsedReceivedDate, selectedIngredient.shelfLifeDays).toISOString() as any;
       }
       await createTransaction(submitValues);
       setOpen(false);
@@ -669,6 +678,20 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                     value={receivedDate}
                     onChange={(e) => setReceivedDate(e.target.value)}
                     data-testid="input-received-date"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+
+            {type === "OUT" && (
+              <FormItem>
+                <FormLabel>출고일</FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    value={receivedDate}
+                    onChange={(e) => setReceivedDate(e.target.value)}
+                    data-testid="input-out-date"
                   />
                 </FormControl>
               </FormItem>
