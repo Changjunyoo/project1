@@ -4,7 +4,7 @@ import { useIngredient, useTransactions } from "@/hooks/use-inventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TransactionForm } from "@/components/TransactionForm";
-import { ArrowLeft, Package, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowLeft, Package, Calendar, ArrowUpRight, ArrowDownRight, ShoppingCart } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -91,12 +91,18 @@ export default function IngredientDetail() {
                   transactions?.map((tx) => (
                     <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-white/50 hover:bg-white transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${tx.type === 'IN' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-                          {tx.type === 'IN' ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                        <div className={`p-2 rounded-full ${
+                          tx.type === 'IN' ? 'bg-green-100 text-green-600' 
+                          : tx.type === 'PURCHASE' ? 'bg-blue-100 text-blue-600'
+                          : 'bg-orange-100 text-orange-600'
+                        }`}>
+                          {tx.type === 'IN' ? <ArrowDownRight className="w-4 h-4" /> 
+                           : tx.type === 'PURCHASE' ? <ShoppingCart className="w-4 h-4" />
+                           : <ArrowUpRight className="w-4 h-4" />}
                         </div>
                         <div>
                           <p className="font-medium text-sm">
-                            {tx.type === 'IN' ? '입고' : '출고'}
+                            {tx.type === 'IN' ? '입고' : tx.type === 'PURCHASE' ? '사입' : '출고'}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {format(new Date(tx.createdAt!), "yyyy-MM-dd • HH:mm")}
@@ -104,14 +110,24 @@ export default function IngredientDetail() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-bold ${tx.type === 'IN' ? 'text-green-600' : 'text-orange-600'}`}>
-                          {tx.type === 'IN' ? '+' : '-'}{tx.quantity} {ingredient.unit}
+                        <p className={`font-bold ${
+                          tx.type === 'IN' ? 'text-green-600' 
+                          : tx.type === 'PURCHASE' ? 'text-blue-600'
+                          : 'text-orange-600'
+                        }`}>
+                          {tx.type === 'IN' || tx.type === 'PURCHASE' ? '+' : '-'}{tx.quantity} {ingredient.unit}
                         </p>
-                        {tx.type === 'IN' && tx.unitPrice && (
+                        {(tx.type === 'IN' || tx.type === 'PURCHASE') && tx.unitPrice && (
                           <p className="text-xs text-muted-foreground">@ ₩{tx.unitPrice.toLocaleString()}/{ingredient.unit}</p>
                         )}
                         {tx.type === 'OUT' && tx.destination && (
                           <p className="text-xs text-muted-foreground">출고처: {tx.destination}</p>
+                        )}
+                        {tx.type === 'PURCHASE' && tx.destination && (
+                          <p className="text-xs text-muted-foreground">배송 지점: {tx.destination}</p>
+                        )}
+                        {tx.type === 'PURCHASE' && tx.supplier && (
+                          <p className="text-xs text-muted-foreground">사입처: {tx.supplier}</p>
                         )}
                       </div>
                     </div>

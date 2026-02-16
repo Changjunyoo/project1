@@ -35,6 +35,10 @@ export default function Purchases() {
 
   const purchaseTransactions = transactions?.filter(tx => tx.type === "PURCHASE") || [];
 
+  const pendingCount = purchaseTransactions.filter(tx => !tx.confirmed || tx.confirmed === "PENDING").length;
+  const confirmedCount = purchaseTransactions.filter(tx => tx.confirmed === "CONFIRMED").length;
+  const rejectedCount = purchaseTransactions.filter(tx => tx.confirmed === "REJECTED").length;
+
   const activeFilterCount = [categoryFilter, originFilter].filter(f => f !== "all").length;
 
   const clearAllFilters = () => {
@@ -66,7 +70,7 @@ export default function Purchases() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">이달의 사입 건수</CardTitle>
@@ -84,6 +88,27 @@ export default function Purchases() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {filteredTransactions.reduce((acc, tx) => acc + (tx.quantity * (tx.unitPrice || 0)), 0).toLocaleString()}원
+              </div>
+            </CardContent>
+          </Card>
+          <Card className={pendingCount > 0 ? "border-yellow-200 bg-yellow-50/30 dark:bg-yellow-900/10" : ""}>
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">배송 확인 대기</CardTitle>
+              <Clock className={`h-4 w-4 ${pendingCount > 0 ? "text-yellow-500" : "text-muted-foreground"}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${pendingCount > 0 ? "text-yellow-600 dark:text-yellow-400" : ""}`}>{pendingCount}건</div>
+              <p className="text-xs text-muted-foreground mt-1">확인: {confirmedCount} • 거부: {rejectedCount}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">확인된 금액</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {purchaseTransactions.filter(tx => tx.confirmed === "CONFIRMED").reduce((acc, tx) => acc + (tx.quantity * (tx.unitPrice || 0)), 0).toLocaleString()}원
               </div>
             </CardContent>
           </Card>
