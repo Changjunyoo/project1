@@ -168,6 +168,42 @@ export async function registerRoutes(
     }
   });
 
+  app.patch(api.transactions.update.path, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const input = api.transactions.update.input.parse(req.body);
+      const transaction = await storage.updateTransaction(id, input);
+      res.json(transaction);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      if (err instanceof Error) {
+        if (err.message === "Transaction not found") {
+          return res.status(404).json({ message: err.message });
+        }
+        return res.status(422).json({ message: err.message });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.transactions.delete.path, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      await storage.deleteTransaction(id);
+      res.status(204).send();
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message === "Transaction not found") {
+          return res.status(404).json({ message: err.message });
+        }
+        return res.status(422).json({ message: err.message });
+      }
+      throw err;
+    }
+  });
+
   // Branch Routes
   app.get(api.branches.list.path, async (req, res) => {
     const branches = await storage.getBranches();

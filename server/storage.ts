@@ -9,6 +9,7 @@ import {
   type InsertIngredient,
   type Transaction,
   type CreateTransactionRequest,
+  type UpdateTransactionRequest,
   type Branch,
   type InsertBranch,
   type Category,
@@ -31,6 +32,8 @@ export interface IStorage {
   getTransactions(ingredientId?: number): Promise<Transaction[]>;
   getTransaction(id: number): Promise<Transaction | undefined>;
   createTransaction(transaction: CreateTransactionRequest): Promise<Transaction>;
+  updateTransaction(id: number, updates: UpdateTransactionRequest): Promise<Transaction>;
+  deleteTransaction(id: number): Promise<void>;
   confirmTransaction(id: number): Promise<Transaction>;
   rejectTransaction(id: number): Promise<Transaction>;
   resetTransaction(id: number): Promise<Transaction>;
@@ -181,6 +184,82 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return transaction;
+  }
+
+  async updateTransaction(id: number, updates: UpdateTransactionRequest): Promise<Transaction> {
+    const tx = await this.getTransaction(id);
+    if (!tx) throw new Error("Transaction not found");
+
+    // PURCHASE transactions with confirmed status cannot be edited
+    if (tx.type === "PURCHASE" && tx.confirmed === "CONFIRMED") {
+      throw new Error("확인된 사입 내역은 수정할 수 없습니다");
+    }
+
+    // If quantity changed, adjust ingredient stock
+    if (updates.quantity !== undefined && updates.quantity !== tx.quantity) {
+      const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.id, tx.ingredientId));
+      if (!ingredient) throw new Error("Ingredient not found");
+
+      const diff = updates.quantity - tx.quantity;
+
+      if (tx.type === "IN") {
+        // IN: more quantity = more stock
+        const newStock = ingredient.currentStock + diff;
+        if (newStock < 0) throw new Error("재고가 부족하여 수량을 줄일 수 없습니다");
+        await db.update(ingredients).set({ currentStock: newStock, lastUpdated: new Date() }).where(eq(ingredients.id, tx.ingredientId));
+      } else if (tx.type === "OUT") {
+        // OUT: more quantity = less stock
+        const newStock = ingredient.currentStock - diff;
+        if (newStock < 0) throw new Error("재고가 부족하여 출고 수량을 늘릴 수 없습니다");
+        await db.update(ingredients).set({ currentStock: newStock, lastUpdated: new Date() }).where(eq(ingredients.id, tx.ingredientId));
+      }
+      // PURCHASE PENDING: stock not yet applied, so no adjustment needed
+    }
+
+    const setValues: Record<string, any> = {};
+    if (updates.quantity !== undefined) setValues.quantity = updates.quantity;
+    if (updates.destination !== undefined) setValues.destination = updates.destination;
+    if (updates.unitPrice !== undefined) setValues.unitPrice = updates.unitPrice;
+    if (updates.supplier !== undefined) setValues.supplier = updates.supplier;
+    if (updates.expiryDate !== undefined) setValues.expiryDate = updates.expiryDate;
+
+    const [updated] = await db
+      .update(inventoryTransactions)
+      .set(setValues)
+      .where(eq(inventoryTransactions.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  async deleteTransaction(id: number): Promise<void> {
+    const tx = await this.getTransaction(id);
+    if (!tx) throw new Error("Transaction not found");
+
+    // PURCHASE confirmed cannot be deleted
+    if (tx.type === "PURCHASE" && tx.confirmed === "CONFIRMED") {
+      throw new Error("확인된 사입 내역은 삭제할 수 없습니다");
+    }
+
+    // Reverse the stock change
+    const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.id, tx.ingredientId));
+    if (ingredient) {
+      let newStock = ingredient.currentStock;
+      if (tx.type === "IN") {
+        newStock = Math.max(0, ingredient.currentStock - tx.quantity);
+      } else if (tx.type === "OUT") {
+        newStock = ingredient.currentStock + tx.quantity;
+      }
+      // PURCHASE PENDING: stock not yet applied
+      if (tx.type !== "PURCHASE" || tx.confirmed === "CONFIRMED") {
+        // Only adjust if stock was previously applied
+      }
+      if (tx.type === "IN" || tx.type === "OUT") {
+        await db.update(ingredients).set({ currentStock: newStock, lastUpdated: new Date() }).where(eq(ingredients.id, tx.ingredientId));
+      }
+    }
+
+    await db.delete(inventoryTransactions).where(eq(inventoryTransactions.id, id));
   }
 
   async confirmTransaction(id: number): Promise<Transaction> {

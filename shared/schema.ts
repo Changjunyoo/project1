@@ -117,6 +117,21 @@ export const createTransactionRequestSchema = insertTransactionSchema.extend({
 
 export type CreateTransactionRequest = z.infer<typeof createTransactionRequestSchema>;
 
+export const updateTransactionSchema = z.object({
+  quantity: z.number().int().positive().optional(),
+  destination: z.string().optional(),
+  unitPrice: z.number().int().min(0).optional().nullable(),
+  supplier: z.string().optional().nullable(),
+  expiryDate: z.union([z.string(), z.date(), z.null()]).optional().transform((val) => {
+    if (val === undefined) return undefined;
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    return new Date(val);
+  }),
+});
+
+export type UpdateTransactionRequest = z.infer<typeof updateTransactionSchema>;
+
 export type IngredientWithHistory = IngredientWithNames & {
   transactions?: Transaction[];
 };
