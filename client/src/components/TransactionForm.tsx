@@ -49,7 +49,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
   const { mutateAsync: createIngredient, isPending: isCreatingIngredient } = useCreateIngredient();
   const { mutateAsync: updateIngredient } = useUpdateIngredient();
-  const [initialStock, setInitialStock] = useState(0);
+  const [initialStock, setInitialStock] = useState<number | "">(0);
   const [pendingIngredientName, setPendingIngredientName] = useState("");
 
   const newIngredientForm = useForm<z.infer<typeof insertIngredientSchema>>({
@@ -212,7 +212,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
               type="button"
               variant="outline"
               className="w-full"
-              onClick={() => { setPickerMode("newIngredient"); newIngredientForm.reset({ name: searchTerm, brand: "", categoryId: undefined, originId: undefined, unit: "kg", minStockLevel: 10 }); setInitialStock(0); setSearchTerm(""); }}
+              onClick={() => { setPickerMode("newIngredient"); newIngredientForm.reset({ name: searchTerm, brand: "", categoryId: undefined, originId: undefined, unit: "kg", minStockLevel: 10 }); setInitialStock(""); setSearchTerm(""); }}
               data-testid="button-add-new-ingredient"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -245,14 +245,14 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     const onCreateIngredient = async (values: z.infer<typeof insertIngredientSchema>) => {
       try {
         const created = await createIngredient(values);
-        if (initialStock > 0) {
+        if (initialStock !== "" && initialStock > 0) {
           await updateIngredient({ id: created.id, currentStock: initialStock } as any);
         }
         form.setValue("ingredientId", created.id);
         setIngredientSearchTerm(created.name);
         setShowIngredientResults(false);
         newIngredientForm.reset();
-        setInitialStock(0);
+        setInitialStock("");
         setPickerMode("form");
       } catch (error) {
       }
@@ -382,7 +382,9 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                     type="number"
                     min="0"
                     value={initialStock}
-                    onChange={e => setInitialStock(parseInt(e.target.value) || 0)}
+                    onChange={e => setInitialStock(e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
+                    onFocus={e => e.target.select()}
+                    onBlur={e => { if (e.target.value === "") setInitialStock(0); }}
                     data-testid="input-new-ingredient-current-stock"
                     className="mt-2"
                   />
@@ -394,7 +396,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                     <FormItem>
                       <FormLabel>최소 재고</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} data-testid="input-new-ingredient-min-stock" />
+                        <Input type="number" min="0" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? "" : parseInt(e.target.value))} onFocus={e => e.target.select()} onBlur={e => { if (e.target.value === "") field.onChange(0); }} data-testid="input-new-ingredient-min-stock" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -595,7 +597,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                                 className="w-full mt-1"
                                 onClick={() => {
                                   setShowIngredientResults(false);
-                                  setInitialStock(0);
+                                  setInitialStock("");
                                   setPendingIngredientName(ingredientSearchTerm);
                                   setPickerMode("newIngredient");
                                 }}
@@ -622,7 +624,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                 <FormItem>
                   <FormLabel>수량 {selectedIngredient && `(${selectedIngredient.unit})`}</FormLabel>
                   <FormControl>
-                    <Input type="number" min="1" {...field} onChange={e => field.onChange(parseInt(e.target.value))} data-testid="input-quantity" />
+                    <Input type="number" min="1" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? "" : parseInt(e.target.value))} onFocus={e => e.target.select()} onBlur={e => { if (e.target.value === "") field.onChange(1); }} data-testid="input-quantity" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -642,7 +644,9 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                         min="0" 
                         {...field} 
                         value={field.value ?? ""} 
-                        onChange={e => field.onChange(e.target.value === "" ? 0 : parseInt(e.target.value))}
+                        onChange={e => field.onChange(e.target.value === "" ? "" : parseInt(e.target.value))}
+                        onFocus={e => e.target.select()}
+                        onBlur={e => { if (e.target.value === "") field.onChange(0); }}
                         data-testid="input-unit-price"
                       />
                     </FormControl>

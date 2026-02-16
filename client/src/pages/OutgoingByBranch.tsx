@@ -300,7 +300,9 @@ export default function OutgoingByBranch() {
                               type="number"
                               min="1"
                               value={editingTx.quantity}
-                              onChange={(e) => setEditingTx({ ...editingTx, quantity: parseInt(e.target.value) || 1 })}
+                              onChange={(e) => setEditingTx({ ...editingTx, quantity: e.target.value === "" ? ("" as any) : parseInt(e.target.value) || 1 })}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => { if (e.target.value === "") setEditingTx({ ...editingTx, quantity: 1 }); }}
                               className="h-8 w-20 text-sm"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") saveEdit();

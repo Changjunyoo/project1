@@ -165,7 +165,7 @@ export function CreateIngredientDialog() {
                   <FormItem>
                     <FormLabel>최소 재고 알림 기준</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" {...field} onChange={e => field.onChange(parseInt(e.target.value))} data-testid="input-min-stock" />
+                      <Input type="number" min="0" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? "" : parseInt(e.target.value))} onFocus={e => e.target.select()} onBlur={e => { if (e.target.value === "") field.onChange(0); }} data-testid="input-min-stock" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
