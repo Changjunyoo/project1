@@ -222,6 +222,7 @@ export class DatabaseStorage implements IStorage {
     if (updates.unitPrice !== undefined) setValues.unitPrice = updates.unitPrice;
     if (updates.supplier !== undefined) setValues.supplier = updates.supplier;
     if (updates.expiryDate !== undefined) setValues.expiryDate = updates.expiryDate;
+    if (updates.createdAt !== undefined) setValues.createdAt = updates.createdAt;
 
     const [updated] = await db
       .update(inventoryTransactions)
