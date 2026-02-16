@@ -36,6 +36,8 @@ interface EditState {
   unitPrice: number | "" | null;
   destination: string;
   supplier: string;
+  department: string;
+  personName: string;
 }
 
 type TypeFilter = "ALL" | "IN" | "OUT" | "PURCHASE";
@@ -75,6 +77,8 @@ export default function TransactionsList() {
       unitPrice: tx.unitPrice ?? null,
       destination: tx.destination || "",
       supplier: tx.supplier || "",
+      department: tx.department || "",
+      personName: tx.personName || "",
     });
   };
 
@@ -99,6 +103,8 @@ export default function TransactionsList() {
     if (tx.type === "PURCHASE") {
       payload.supplier = editingTx.supplier || undefined;
     }
+    payload.department = editingTx.department || undefined;
+    payload.personName = editingTx.personName || undefined;
 
     try {
       await updateTransaction(payload as any);

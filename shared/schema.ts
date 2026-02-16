@@ -24,6 +24,19 @@ export const origins = pgTable("origins", {
   name: text("name").notNull(),
 });
 
+// 부서 (Departments)
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+});
+
+// 담당자 (Persons)
+export const persons = pgTable("persons", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  departmentId: integer("department_id"),
+});
+
 // 식자재 (Ingredients)
 export const ingredients = pgTable("ingredients", {
   id: serial("id").primaryKey(),
@@ -69,6 +82,14 @@ export const insertOriginSchema = createInsertSchema(origins).omit({
   id: true,
 });
 
+export const insertDepartmentSchema = createInsertSchema(departments).omit({
+  id: true,
+});
+
+export const insertPersonSchema = createInsertSchema(persons).omit({
+  id: true,
+});
+
 export const insertIngredientSchema = createInsertSchema(ingredients).omit({
   id: true,
   currentStock: true,
@@ -90,6 +111,12 @@ export type InsertCategory = z.infer<typeof insertCategorySchema>;
 
 export type Origin = typeof origins.$inferSelect;
 export type InsertOrigin = z.infer<typeof insertOriginSchema>;
+
+export type Department = typeof departments.$inferSelect;
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+
+export type Person = typeof persons.$inferSelect;
+export type InsertPerson = z.infer<typeof insertPersonSchema>;
 
 export type Ingredient = typeof ingredients.$inferSelect;
 export type InsertIngredient = z.infer<typeof insertIngredientSchema>;

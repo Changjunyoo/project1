@@ -9,6 +9,12 @@ import {
   useDeleteOrigin,
   useIngredients,
   useTransactions,
+  useDepartments,
+  useCreateDepartment,
+  useDeleteDepartment,
+  usePersons,
+  useCreatePerson,
+  useDeletePerson,
 } from "@/hooks/use-inventory";
 import {
   Tags,
@@ -23,6 +29,8 @@ import {
   CheckCircle,
   XCircle,
   Package,
+  Building,
+  User,
 } from "lucide-react";
 import {
   Card,
@@ -137,11 +145,22 @@ export default function CategoryOriginManagement() {
   const { mutate: createOrigin, isPending: isCreatingOrigin } = useCreateOrigin();
   const { mutate: deleteOrigin } = useDeleteOrigin();
 
+  const { data: departmentList, isLoading: loadingDept } = useDepartments();
+  const { mutate: createDepartment, isPending: isCreatingDept } = useCreateDepartment();
+  const { mutate: deleteDepartment } = useDeleteDepartment();
+
+  const { data: personList, isLoading: loadingPerson } = usePersons();
+  const { mutate: createPerson, isPending: isCreatingPerson } = useCreatePerson();
+  const { mutate: deletePerson } = useDeletePerson();
+
   const { data: ingredientList } = useIngredients();
   const { data: transactionList } = useTransactions();
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newOriginName, setNewOriginName] = useState("");
+  const [newDeptName, setNewDeptName] = useState("");
+  const [newPersonName, setNewPersonName] = useState("");
+  const [newPersonDeptId, setNewPersonDeptId] = useState<number | undefined>(undefined);
 
   // Track expanded categories/origins (use -1 for uncategorized)
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
@@ -269,6 +288,24 @@ export default function CategoryOriginManagement() {
     createOrigin(
       { name: newOriginName.trim() },
       { onSuccess: () => setNewOriginName("") }
+    );
+  };
+
+  const handleAddDepartment = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newDeptName.trim()) return;
+    createDepartment(
+      { name: newDeptName.trim() },
+      { onSuccess: () => setNewDeptName("") }
+    );
+  };
+
+  const handleAddPerson = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newPersonName.trim()) return;
+    createPerson(
+      { name: newPersonName.trim(), departmentId: newPersonDeptId ?? null },
+      { onSuccess: () => { setNewPersonName(""); setNewPersonDeptId(undefined); } }
     );
   };
 
@@ -411,7 +448,7 @@ export default function CategoryOriginManagement() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">등록된 카테고리</CardTitle>
@@ -452,6 +489,24 @@ export default function CategoryOriginManagement() {
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">{expiryStats.warning}개</div>
               <p className="text-xs text-muted-foreground mt-0.5">7일 이내 만료 예정</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">등록된 부서</CardTitle>
+              <Building className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{departmentList?.length || 0}개</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">등록된 담당자</CardTitle>
+              <User className="h-4 w-4 text-indigo-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{personList?.length || 0}명</div>
             </CardContent>
           </Card>
         </div>
@@ -717,6 +772,198 @@ export default function CategoryOriginManagement() {
                     </div>
                   );
                 })()
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Departments & Persons Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+          {/* Departments */}
+          <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Building className="w-5 h-5 text-purple-500" />
+                부서
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                입출고 시 선택할 수 있는 부서 목록입니다.
+              </p>
+            </div>
+
+            <div className="p-4 border-b border-border">
+              <form onSubmit={handleAddDepartment} className="flex gap-2">
+                <Input
+                  placeholder="새 부서 이름 (예: 주방, 홀)"
+                  value={newDeptName}
+                  onChange={(e) => setNewDeptName(e.target.value)}
+                  data-testid="input-new-department"
+                />
+                <Button
+                  type="submit"
+                  disabled={isCreatingDept || !newDeptName.trim()}
+                  data-testid="button-add-department"
+                >
+                  {isCreatingDept ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                </Button>
+              </form>
+            </div>
+
+            <div className="divide-y divide-border">
+              {loadingDept ? (
+                <div className="p-8 text-center text-muted-foreground">불러오는 중...</div>
+              ) : !departmentList || departmentList.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  등록된 부서가 없습니다.
+                </div>
+              ) : (
+                departmentList.map((dept) => (
+                  <div key={dept.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors group" data-testid={`row-department-${dept.id}`}>
+                    <div className="flex items-center gap-2">
+                      <Building className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">{dept.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({personList?.filter(p => p.departmentId === dept.id).length || 0}명)
+                      </span>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          data-testid={`button-delete-department-${dept.id}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>부서 삭제</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            "{dept.name}" 부서를 삭제하시겠습니까?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>취소</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteDepartment(dept.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            삭제
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Persons */}
+          <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <User className="w-5 h-5 text-indigo-500" />
+                담당자
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                입출고 시 선택할 수 있는 담당자 목록입니다.
+              </p>
+            </div>
+
+            <div className="p-4 border-b border-border">
+              <form onSubmit={handleAddPerson} className="flex gap-2">
+                <Input
+                  placeholder="담당자 이름 (예: 홍길동)"
+                  value={newPersonName}
+                  onChange={(e) => setNewPersonName(e.target.value)}
+                  className="flex-1"
+                  data-testid="input-new-person"
+                />
+                <select
+                  value={newPersonDeptId ?? ""}
+                  onChange={(e) => setNewPersonDeptId(e.target.value ? Number(e.target.value) : undefined)}
+                  className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  data-testid="select-person-department"
+                >
+                  <option value="">부서 없음</option>
+                  {departmentList?.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+                <Button
+                  type="submit"
+                  disabled={isCreatingPerson || !newPersonName.trim()}
+                  data-testid="button-add-person"
+                >
+                  {isCreatingPerson ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                </Button>
+              </form>
+            </div>
+
+            <div className="divide-y divide-border">
+              {loadingPerson ? (
+                <div className="p-8 text-center text-muted-foreground">불러오는 중...</div>
+              ) : !personList || personList.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  등록된 담당자가 없습니다.
+                </div>
+              ) : (
+                personList.map((person) => {
+                  const dept = departmentList?.find(d => d.id === person.departmentId);
+                  return (
+                    <div key={person.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors group" data-testid={`row-person-${person.id}`}>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium">{person.name}</span>
+                        {dept && (
+                          <Badge variant="secondary" className="text-xs">
+                            {dept.name}
+                          </Badge>
+                        )}
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            data-testid={`button-delete-person-${person.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>담당자 삭제</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              "{person.name}" 담당자를 삭제하시겠습니까?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>취소</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deletePerson(person.id)}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              삭제
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useIngredients, useCreateIngredient, useUpdateIngredient, useCreateTransaction, useBranches, useCategories, useOrigins, useCreateCategory, useCreateOrigin } from "@/hooks/use-inventory";
+import { useIngredients, useCreateIngredient, useUpdateIngredient, useCreateTransaction, useBranches, useCategories, useOrigins, useCreateCategory, useCreateOrigin, useDepartments, usePersons } from "@/hooks/use-inventory";
 import { createTransactionRequestSchema, insertIngredientSchema } from "@shared/schema";
 import { InlineAddableSelector } from "@/components/InlineAddableSelector";
 
@@ -49,6 +49,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
   const { mutateAsync: createIngredient, isPending: isCreatingIngredient } = useCreateIngredient();
   const { mutateAsync: updateIngredient } = useUpdateIngredient();
+  const { data: departmentList } = useDepartments();
+  const { data: personList } = usePersons();
   const [initialStock, setInitialStock] = useState<number | "">(0);
   const [pendingIngredientName, setPendingIngredientName] = useState("");
 
@@ -749,12 +751,26 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                   <FormItem>
                     <FormLabel>부서</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="예: 주방, 홀" 
-                        {...field} 
-                        value={field.value ?? ""} 
-                        data-testid="input-department"
-                      />
+                      {departmentList && departmentList.length > 0 ? (
+                        <select
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value || null)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          data-testid="select-department"
+                        >
+                          <option value="">선택 안 함</option>
+                          {departmentList.map((d) => (
+                            <option key={d.id} value={d.name}>{d.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input 
+                          placeholder="예: 주방, 홀" 
+                          {...field} 
+                          value={field.value ?? ""} 
+                          data-testid="input-department"
+                        />
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -767,12 +783,26 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                   <FormItem>
                     <FormLabel>담당자</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="예: 홍길동" 
-                        {...field} 
-                        value={field.value ?? ""} 
-                        data-testid="input-person-name"
-                      />
+                      {personList && personList.length > 0 ? (
+                        <select
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value || null)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          data-testid="select-person"
+                        >
+                          <option value="">선택 안 함</option>
+                          {personList.map((p) => (
+                            <option key={p.id} value={p.name}>{p.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input 
+                          placeholder="예: 홍길동" 
+                          {...field} 
+                          value={field.value ?? ""} 
+                          data-testid="input-person-name"
+                        />
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>

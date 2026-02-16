@@ -5,6 +5,8 @@ import {
   branches,
   categories,
   origins,
+  departments,
+  persons,
   type Ingredient,
   type InsertIngredient,
   type Transaction,
@@ -16,6 +18,10 @@ import {
   type InsertCategory,
   type Origin,
   type InsertOrigin,
+  type Department,
+  type InsertDepartment,
+  type Person,
+  type InsertPerson,
   type IngredientWithNames,
 } from "@shared/schema";
 import { eq, desc, sql } from "drizzle-orm";
@@ -54,6 +60,16 @@ export interface IStorage {
   getOrigins(): Promise<Origin[]>;
   createOrigin(origin: InsertOrigin): Promise<Origin>;
   deleteOrigin(id: number): Promise<void>;
+
+  // Departments
+  getDepartments(): Promise<Department[]>;
+  createDepartment(department: InsertDepartment): Promise<Department>;
+  deleteDepartment(id: number): Promise<void>;
+
+  // Persons
+  getPersons(): Promise<Person[]>;
+  createPerson(person: InsertPerson): Promise<Person>;
+  deletePerson(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -386,6 +402,36 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOrigin(id: number): Promise<void> {
     await db.delete(origins).where(eq(origins.id, id));
+  }
+
+  // === DEPARTMENTS ===
+
+  async getDepartments(): Promise<Department[]> {
+    return await db.select().from(departments).orderBy(departments.name);
+  }
+
+  async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
+    const [department] = await db.insert(departments).values(insertDepartment).returning();
+    return department;
+  }
+
+  async deleteDepartment(id: number): Promise<void> {
+    await db.delete(departments).where(eq(departments.id, id));
+  }
+
+  // === PERSONS ===
+
+  async getPersons(): Promise<Person[]> {
+    return await db.select().from(persons).orderBy(persons.name);
+  }
+
+  async createPerson(insertPerson: InsertPerson): Promise<Person> {
+    const [person] = await db.insert(persons).values(insertPerson).returning();
+    return person;
+  }
+
+  async deletePerson(id: number): Promise<void> {
+    await db.delete(persons).where(eq(persons.id, id));
   }
 }
 

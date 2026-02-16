@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertIngredientSchema, createTransactionRequestSchema, updateTransactionSchema, insertBranchSchema, insertCategorySchema, insertOriginSchema, ingredients, inventoryTransactions, branches, categories, origins } from './schema';
+import { insertIngredientSchema, createTransactionRequestSchema, updateTransactionSchema, insertBranchSchema, insertCategorySchema, insertOriginSchema, insertDepartmentSchema, insertPersonSchema, ingredients, inventoryTransactions, branches, categories, origins, departments, persons } from './schema';
 import type { IngredientWithNames } from './schema';
 
 export const errorSchemas = {
@@ -209,6 +209,58 @@ export const api = {
     delete: {
       method: 'DELETE' as const,
       path: '/api/origins/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  departments: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/departments' as const,
+      responses: {
+        200: z.array(z.custom<typeof departments.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/departments' as const,
+      input: insertDepartmentSchema,
+      responses: {
+        201: z.custom<typeof departments.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/departments/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  persons: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/persons' as const,
+      responses: {
+        200: z.array(z.custom<typeof persons.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/persons' as const,
+      input: insertPersonSchema,
+      responses: {
+        201: z.custom<typeof persons.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/persons/:id' as const,
       responses: {
         204: z.void(),
         404: errorSchemas.notFound,

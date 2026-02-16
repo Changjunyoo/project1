@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import { type IngredientWithNames, type CreateIngredientRequest, type UpdateIngredientRequest, type Transaction, type CreateTransactionRequest, type UpdateTransactionRequest, type Branch, type InsertBranch, type Category, type InsertCategory, type Origin, type InsertOrigin } from "@shared/schema";
+import { type IngredientWithNames, type CreateIngredientRequest, type UpdateIngredientRequest, type Transaction, type CreateTransactionRequest, type UpdateTransactionRequest, type Branch, type InsertBranch, type Category, type InsertCategory, type Origin, type InsertOrigin, type Department, type InsertDepartment, type Person, type InsertPerson } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================
@@ -472,6 +472,124 @@ export function useDeleteOrigin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.origins.list.path] });
       toast({ title: "완료", description: "원산지가 삭제되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+// ============================================
+// DEPARTMENTS
+// ============================================
+
+export function useDepartments() {
+  return useQuery({
+    queryKey: [api.departments.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.departments.list.path);
+      if (!res.ok) throw new Error("Failed to fetch departments");
+      return res.json() as Promise<Department[]>;
+    },
+  });
+}
+
+export function useCreateDepartment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: InsertDepartment) => {
+      const res = await fetch(api.departments.create.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create department");
+      return res.json() as Promise<Department>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.departments.list.path] });
+      toast({ title: "완료", description: "부서가 추가되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useDeleteDepartment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.departments.delete.path, { id });
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete department");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.departments.list.path] });
+      toast({ title: "완료", description: "부서가 삭제되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+// ============================================
+// PERSONS
+// ============================================
+
+export function usePersons() {
+  return useQuery({
+    queryKey: [api.persons.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.persons.list.path);
+      if (!res.ok) throw new Error("Failed to fetch persons");
+      return res.json() as Promise<Person[]>;
+    },
+  });
+}
+
+export function useCreatePerson() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: InsertPerson) => {
+      const res = await fetch(api.persons.create.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create person");
+      return res.json() as Promise<Person>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.persons.list.path] });
+      toast({ title: "완료", description: "담당자가 추가되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useDeletePerson() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.persons.delete.path, { id });
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete person");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.persons.list.path] });
+      toast({ title: "완료", description: "담당자가 삭제되었습니다." });
     },
     onError: (error) => {
       toast({ title: "오류", description: error.message, variant: "destructive" });
