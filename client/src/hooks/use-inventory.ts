@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import { type Ingredient, type CreateIngredientRequest, type UpdateIngredientRequest, type Transaction, type CreateTransactionRequest, type Branch, type InsertBranch } from "@shared/schema";
+import { type IngredientWithNames, type CreateIngredientRequest, type UpdateIngredientRequest, type Transaction, type CreateTransactionRequest, type Branch, type InsertBranch, type Category, type InsertCategory, type Origin, type InsertOrigin } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================
@@ -305,5 +305,123 @@ export function useCreateTransaction() {
     onError: (error) => {
       toast({ title: "Transaction Failed", description: error.message, variant: "destructive" });
     }
+  });
+}
+
+// ============================================
+// CATEGORIES
+// ============================================
+
+export function useCategories() {
+  return useQuery({
+    queryKey: [api.categories.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.categories.list.path);
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      return res.json() as Promise<Category[]>;
+    },
+  });
+}
+
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: InsertCategory) => {
+      const res = await fetch(api.categories.create.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create category");
+      return res.json() as Promise<Category>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.categories.list.path] });
+      toast({ title: "완료", description: "카테고리가 추가되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.categories.delete.path, { id });
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete category");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.categories.list.path] });
+      toast({ title: "완료", description: "카테고리가 삭제되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+// ============================================
+// ORIGINS
+// ============================================
+
+export function useOrigins() {
+  return useQuery({
+    queryKey: [api.origins.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.origins.list.path);
+      if (!res.ok) throw new Error("Failed to fetch origins");
+      return res.json() as Promise<Origin[]>;
+    },
+  });
+}
+
+export function useCreateOrigin() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: InsertOrigin) => {
+      const res = await fetch(api.origins.create.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create origin");
+      return res.json() as Promise<Origin>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.origins.list.path] });
+      toast({ title: "완료", description: "원산지가 추가되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useDeleteOrigin() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.origins.delete.path, { id });
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete origin");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.origins.list.path] });
+      toast({ title: "완료", description: "원산지가 삭제되었습니다." });
+    },
+    onError: (error) => {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    },
   });
 }

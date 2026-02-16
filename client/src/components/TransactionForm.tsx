@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useIngredients, useCreateIngredient, useUpdateIngredient, useCreateTransaction, useBranches } from "@/hooks/use-inventory";
-import { createTransactionRequestSchema, insertIngredientSchema, INGREDIENT_CATEGORIES } from "@shared/schema";
+import { useIngredients, useCreateIngredient, useUpdateIngredient, useCreateTransaction, useBranches, useCategories, useOrigins } from "@/hooks/use-inventory";
+import { createTransactionRequestSchema, insertIngredientSchema } from "@shared/schema";
 
 interface TransactionFormProps {
   type: "IN" | "OUT" | "PURCHASE";
@@ -41,6 +41,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
   const [showIngredientResults, setShowIngredientResults] = useState(false);
   const { data: ingredients } = useIngredients();
   const { data: branchList } = useBranches();
+  const { data: categories } = useCategories();
+  const { data: origins } = useOrigins();
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
   const { mutateAsync: createIngredient, isPending: isCreatingIngredient } = useCreateIngredient();
   const { mutateAsync: updateIngredient } = useUpdateIngredient();
@@ -52,8 +54,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     defaultValues: {
       name: "",
       brand: "",
-      category: "",
-      origin: "",
+      categoryId: undefined,
+      originId: undefined,
       unit: "kg",
       minStockLevel: 10,
       shelfLifeDays: undefined,
@@ -122,7 +124,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
 
   useEffect(() => {
     if (pickerMode === "newIngredient" && pendingIngredientName) {
-      newIngredientForm.reset({ name: pendingIngredientName, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10, shelfLifeDays: undefined });
+      newIngredientForm.reset({ name: pendingIngredientName, brand: "", categoryId: undefined, originId: undefined, unit: "kg", minStockLevel: 10, shelfLifeDays: undefined });
       setPendingIngredientName("");
     }
   }, [pickerMode, pendingIngredientName]);
@@ -194,7 +196,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
               type="button"
               variant="outline"
               className="w-full"
-              onClick={() => { setPickerMode("newIngredient"); newIngredientForm.reset({ name: searchTerm, brand: "", category: "", origin: "", unit: "kg", minStockLevel: 10 }); setInitialStock(0); setSearchTerm(""); }}
+              onClick={() => { setPickerMode("newIngredient"); newIngredientForm.reset({ name: searchTerm, brand: "", categoryId: undefined, originId: undefined, unit: "kg", minStockLevel: 10 }); setInitialStock(0); setSearchTerm(""); }}
               data-testid="button-add-new-ingredient"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -284,12 +286,26 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                 />
                 <FormField
                   control={newIngredientForm.control}
-                  name="origin"
+                  name="originId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>원산지</FormLabel>
                       <FormControl>
-                        <Input placeholder="예: 국내산" {...field} value={field.value || ''} data-testid="input-new-ingredient-origin" />
+                        <div className="flex gap-1 flex-wrap">
+                          {origins?.map((origin) => (
+                            <Button
+                              key={origin.id}
+                              type="button"
+                              variant={field.value === origin.id ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => field.onChange(origin.id)}
+                              data-testid={`button-new-origin-${origin.name}`}
+                              className="text-xs"
+                            >
+                              {origin.name}
+                            </Button>
+                          ))}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -298,23 +314,23 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
               </div>
               <FormField
                 control={newIngredientForm.control}
-                name="category"
+                name="categoryId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>카테고리</FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
-                        {INGREDIENT_CATEGORIES.map((cat) => (
+                        {categories?.map((cat) => (
                           <Button
-                            key={cat}
+                            key={cat.id}
                             type="button"
-                            variant={field.value === cat ? "default" : "outline"}
+                            variant={field.value === cat.id ? "default" : "outline"}
                             size="sm"
-                            onClick={() => field.onChange(cat)}
+                            onClick={() => field.onChange(cat.id)}
                             className="flex-1"
-                            data-testid={`button-new-cat-${cat}`}
+                            data-testid={`button-new-cat-${cat.name}`}
                           >
-                            {cat}
+                            {cat.name}
                           </Button>
                         ))}
                       </div>
@@ -617,7 +633,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                 name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>단가 (₩)</FormLabel>
+                    <FormLabel>단가 (&#8361;)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 

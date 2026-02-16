@@ -1,25 +1,30 @@
-
 import { db } from "./db";
 import {
   ingredients,
   inventoryTransactions,
   branches,
+  categories,
+  origins,
   type Ingredient,
   type InsertIngredient,
   type Transaction,
-  type InsertTransaction,
   type CreateTransactionRequest,
   type Branch,
   type InsertBranch,
+  type Category,
+  type InsertCategory,
+  type Origin,
+  type InsertOrigin,
+  type IngredientWithNames,
 } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Ingredients
-  getIngredients(): Promise<Ingredient[]>;
-  getIngredient(id: number): Promise<Ingredient | undefined>;
-  createIngredient(ingredient: InsertIngredient): Promise<Ingredient>;
-  updateIngredient(id: number, updates: Partial<InsertIngredient>): Promise<Ingredient>;
+  getIngredients(): Promise<IngredientWithNames[]>;
+  getIngredient(id: number): Promise<IngredientWithNames | undefined>;
+  createIngredient(ingredient: InsertIngredient): Promise<IngredientWithNames>;
+  updateIngredient(id: number, updates: Partial<InsertIngredient & { currentStock?: number }>): Promise<IngredientWithNames>;
   deleteIngredient(id: number): Promise<void>;
 
   // Transactions & Stock Management
@@ -36,33 +41,86 @@ export interface IStorage {
   createBranch(branch: InsertBranch): Promise<Branch>;
   updateBranch(id: number, updates: Partial<InsertBranch>): Promise<Branch>;
   deleteBranch(id: number): Promise<void>;
+
+  // Categories
+  getCategories(): Promise<Category[]>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  deleteCategory(id: number): Promise<void>;
+
+  // Origins
+  getOrigins(): Promise<Origin[]>;
+  createOrigin(origin: InsertOrigin): Promise<Origin>;
+  deleteOrigin(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getIngredients(): Promise<Ingredient[]> {
-    return await db.select().from(ingredients).orderBy(ingredients.name);
+
+  // Helper: get ingredient with joined category/origin names
+  private async getIngredientWithNames(id: number): Promise<IngredientWithNames | undefined> {
+    const rows = await db
+      .select({
+        id: ingredients.id,
+        name: ingredients.name,
+        brand: ingredients.brand,
+        categoryId: ingredients.categoryId,
+        originId: ingredients.originId,
+        unit: ingredients.unit,
+        currentStock: ingredients.currentStock,
+        minStockLevel: ingredients.minStockLevel,
+        shelfLifeDays: ingredients.shelfLifeDays,
+        lastUpdated: ingredients.lastUpdated,
+        categoryName: categories.name,
+        originName: origins.name,
+      })
+      .from(ingredients)
+      .leftJoin(categories, eq(ingredients.categoryId, categories.id))
+      .leftJoin(origins, eq(ingredients.originId, origins.id))
+      .where(eq(ingredients.id, id));
+
+    return rows[0] || undefined;
   }
 
-  async getIngredient(id: number): Promise<Ingredient | undefined> {
-    const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.id, id));
-    return ingredient;
+  async getIngredients(): Promise<IngredientWithNames[]> {
+    return await db
+      .select({
+        id: ingredients.id,
+        name: ingredients.name,
+        brand: ingredients.brand,
+        categoryId: ingredients.categoryId,
+        originId: ingredients.originId,
+        unit: ingredients.unit,
+        currentStock: ingredients.currentStock,
+        minStockLevel: ingredients.minStockLevel,
+        shelfLifeDays: ingredients.shelfLifeDays,
+        lastUpdated: ingredients.lastUpdated,
+        categoryName: categories.name,
+        originName: origins.name,
+      })
+      .from(ingredients)
+      .leftJoin(categories, eq(ingredients.categoryId, categories.id))
+      .leftJoin(origins, eq(ingredients.originId, origins.id))
+      .orderBy(ingredients.name);
   }
 
-  async createIngredient(insertIngredient: InsertIngredient): Promise<Ingredient> {
+  async getIngredient(id: number): Promise<IngredientWithNames | undefined> {
+    return this.getIngredientWithNames(id);
+  }
+
+  async createIngredient(insertIngredient: InsertIngredient): Promise<IngredientWithNames> {
     const [ingredient] = await db
       .insert(ingredients)
       .values(insertIngredient)
       .returning();
-    return ingredient;
+    return (await this.getIngredientWithNames(ingredient.id))!;
   }
 
-  async updateIngredient(id: number, updates: Partial<InsertIngredient>): Promise<Ingredient> {
-    const [updated] = await db
+  async updateIngredient(id: number, updates: Partial<InsertIngredient & { currentStock?: number }>): Promise<IngredientWithNames> {
+    const setValues: any = { ...updates };
+    await db
       .update(ingredients)
-      .set(updates)
-      .where(eq(ingredients.id, id))
-      .returning();
-    return updated;
+      .set(setValues)
+      .where(eq(ingredients.id, id));
+    return (await this.getIngredientWithNames(id))!;
   }
 
   async deleteIngredient(id: number): Promise<void> {
@@ -89,8 +147,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTransaction(txRequest: CreateTransactionRequest): Promise<Transaction> {
-    const ingredient = await this.getIngredient(txRequest.ingredientId);
-    if (!ingredient) {
+    const ingredient = await db.select().from(ingredients).where(eq(ingredients.id, txRequest.ingredientId));
+    if (!ingredient[0]) {
       throw new Error("Ingredient not found");
     }
 
@@ -102,11 +160,11 @@ export class DatabaseStorage implements IStorage {
       return transaction;
     }
 
-    let newStock = ingredient.currentStock;
+    let newStock = ingredient[0].currentStock;
     if (txRequest.type === "IN") {
       newStock += txRequest.quantity;
     } else {
-      if (ingredient.currentStock < txRequest.quantity) {
+      if (ingredient[0].currentStock < txRequest.quantity) {
         throw new Error("Insufficient stock");
       }
       newStock -= txRequest.quantity;
@@ -132,7 +190,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Transaction cannot be confirmed");
     }
 
-    const ingredient = await this.getIngredient(tx.ingredientId);
+    const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.id, tx.ingredientId));
     if (!ingredient) throw new Error("Ingredient not found");
 
     await db
@@ -176,7 +234,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (tx.confirmed === "CONFIRMED") {
-      const ingredient = await this.getIngredient(tx.ingredientId);
+      const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.id, tx.ingredientId));
       if (!ingredient) throw new Error("Ingredient not found");
       await db
         .update(ingredients)
@@ -216,6 +274,36 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBranch(id: number): Promise<void> {
     await db.delete(branches).where(eq(branches.id, id));
+  }
+
+  // === CATEGORIES ===
+
+  async getCategories(): Promise<Category[]> {
+    return await db.select().from(categories).orderBy(categories.name);
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const [category] = await db.insert(categories).values(insertCategory).returning();
+    return category;
+  }
+
+  async deleteCategory(id: number): Promise<void> {
+    await db.delete(categories).where(eq(categories.id, id));
+  }
+
+  // === ORIGINS ===
+
+  async getOrigins(): Promise<Origin[]> {
+    return await db.select().from(origins).orderBy(origins.name);
+  }
+
+  async createOrigin(insertOrigin: InsertOrigin): Promise<Origin> {
+    const [origin] = await db.insert(origins).values(insertOrigin).returning();
+    return origin;
+  }
+
+  async deleteOrigin(id: number): Promise<void> {
+    await db.delete(origins).where(eq(origins.id, id));
   }
 }
 
