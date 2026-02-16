@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { useTransactions, useIngredients, useUpdateIngredient, useConfirmTransaction, useRejectTransaction, useResetTransaction, useCategories, useOrigins } from "@/hooks/use-inventory";
 import { TransactionForm } from "@/components/TransactionForm";
 import { format } from "date-fns";
-import { ShoppingCart, Search, X, Pencil, Check, XCircle, CheckCircle, Clock } from "lucide-react";
+import { ShoppingCart, Search, X, Pencil, XCircle, CheckCircle, Clock } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -13,12 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import type { IngredientWithNames, Category, Origin } from "@shared/schema";
+import { EditableCategoryCell, EditableOriginCell } from "@/components/EditableCells";
 
 export default function Purchases() {
   const { data: transactions, isLoading } = useTransactions();
@@ -240,12 +235,12 @@ export default function Purchases() {
                         <td className="px-6 py-4 font-medium">{ingredient?.name || '알 수 없음'}</td>
                         <td className="px-6 py-4 text-muted-foreground">
                           {ingredient ? (
-                            <EditableCategoryCell ingredient={ingredient} categories={categories || []} onUpdate={updateIngredient} onFilter={setCategoryFilter} />
+                            <EditableCategoryCell ingredient={ingredient} categories={categories || []} onUpdate={updateIngredient} onFilter={setCategoryFilter} testIdPrefix="purchase-" />
                           ) : "-"}
                         </td>
                         <td className="px-6 py-4 text-muted-foreground">
                           {ingredient ? (
-                            <EditableOriginCell ingredient={ingredient} origins={origins || []} onUpdate={updateIngredient} onFilter={setOriginFilter} />
+                            <EditableOriginCell ingredient={ingredient} origins={origins || []} onUpdate={updateIngredient} onFilter={setOriginFilter} testIdPrefix="purchase-" />
                           ) : "-"}
                         </td>
                         <td className="px-6 py-4">
@@ -333,6 +328,19 @@ export default function Purchases() {
                   })
                 )}
               </tbody>
+              {filteredTransactions.length > 0 && (
+                <tfoot className="bg-muted/30 font-medium border-t-2 border-border">
+                  <tr>
+                    <td className="px-6 py-3" colSpan={4}>합계</td>
+                    <td className="px-6 py-3">{filteredTransactions.reduce((s, tx) => s + tx.quantity, 0)}</td>
+                    <td className="px-6 py-3"></td>
+                    <td className="px-6 py-3 font-bold text-blue-600">
+                      &#8361;{filteredTransactions.reduce((s, tx) => s + (tx.quantity * (tx.unitPrice || 0)), 0).toLocaleString()}
+                    </td>
+                    <td colSpan={3}></td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
@@ -341,102 +349,3 @@ export default function Purchases() {
   );
 }
 
-function EditableCategoryCell({ ingredient, categories, onUpdate, onFilter }: {
-  ingredient: IngredientWithNames;
-  categories: Category[];
-  onUpdate: (data: { id: number; categoryId: number }) => Promise<any>;
-  onFilter: (val: string) => void;
-}) {
-  const [popoverOpen, setPopoverOpen] = useState(false);
-
-  const handleSelect = async (catId: number) => {
-    await onUpdate({ id: ingredient.id, categoryId: catId });
-    setPopoverOpen(false);
-  };
-
-  return (
-    <div className="flex items-center gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="p-0 h-auto text-muted-foreground underline-offset-2 hover:underline"
-        onClick={() => ingredient.categoryName && onFilter(ingredient.categoryName)}
-        data-testid={`purchase-cell-category-${ingredient.id}`}
-      >
-        {ingredient.categoryName || "-"}
-      </Button>
-      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-5 w-5 invisible group-hover:visible" data-testid={`button-edit-category-${ingredient.id}`}>
-            <Pencil className="w-3 h-3" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-2" align="start">
-          <div className="flex gap-1">
-            {categories.map((cat) => (
-              <Button
-                key={cat.id}
-                variant={ingredient.categoryId === cat.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSelect(cat.id)}
-                data-testid={`popover-category-${cat.name}-${ingredient.id}`}
-              >
-                {cat.name}
-              </Button>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-}
-
-function EditableOriginCell({ ingredient, origins, onUpdate, onFilter }: {
-  ingredient: IngredientWithNames;
-  origins: Origin[];
-  onUpdate: (data: { id: number; originId: number }) => Promise<any>;
-  onFilter: (val: string) => void;
-}) {
-  const [popoverOpen, setPopoverOpen] = useState(false);
-
-  const handleSelect = async (originId: number) => {
-    await onUpdate({ id: ingredient.id, originId });
-    setPopoverOpen(false);
-  };
-
-  return (
-    <div className="flex items-center gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="p-0 h-auto text-muted-foreground underline-offset-2 hover:underline"
-        onClick={() => ingredient.originName && onFilter(ingredient.originName)}
-        data-testid={`purchase-cell-origin-${ingredient.id}`}
-      >
-        {ingredient.originName || "-"}
-      </Button>
-      <Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); }}>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-5 w-5 invisible group-hover:visible" data-testid={`button-edit-origin-${ingredient.id}`}>
-            <Pencil className="w-3 h-3" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-2" align="start">
-          <div className="flex gap-1 flex-wrap">
-            {origins.map((origin) => (
-              <Button
-                key={origin.id}
-                variant={ingredient.originId === origin.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSelect(origin.id)}
-                data-testid={`popover-origin-${origin.name}-${ingredient.id}`}
-              >
-                {origin.name}
-              </Button>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-}

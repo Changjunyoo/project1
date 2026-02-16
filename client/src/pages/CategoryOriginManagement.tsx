@@ -143,7 +143,7 @@ export default function CategoryOriginManagement() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newOriginName, setNewOriginName] = useState("");
 
-  // Track expanded categories/origins
+  // Track expanded categories/origins (use -1 for uncategorized)
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
   const [expandedOrigins, setExpandedOrigins] = useState<Set<number>>(new Set());
 
@@ -212,30 +212,30 @@ export default function CategoryOriginManagement() {
     return map;
   }, [ingredientList, transactionList]);
 
-  // Group ingredients by categoryId
+  // Group ingredients by categoryId (including null -> -1)
   const ingredientsByCategory = useMemo(() => {
     if (!ingredientList) return new Map<number, IngredientExpiryInfo[]>();
     const map = new Map<number, IngredientExpiryInfo[]>();
     for (const ing of ingredientList) {
-      if (!ing.categoryId) continue;
+      const key = ing.categoryId ?? -1;
       const info = expiryMap.get(ing.id);
       if (!info) continue;
-      if (!map.has(ing.categoryId)) map.set(ing.categoryId, []);
-      map.get(ing.categoryId)!.push(info);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(info);
     }
     return map;
   }, [ingredientList, expiryMap]);
 
-  // Group ingredients by originId
+  // Group ingredients by originId (including null -> -1)
   const ingredientsByOrigin = useMemo(() => {
     if (!ingredientList) return new Map<number, IngredientExpiryInfo[]>();
     const map = new Map<number, IngredientExpiryInfo[]>();
     for (const ing of ingredientList) {
-      if (!ing.originId) continue;
+      const key = ing.originId ?? -1;
       const info = expiryMap.get(ing.id);
       if (!info) continue;
-      if (!map.has(ing.originId)) map.set(ing.originId, []);
-      map.get(ing.originId)!.push(info);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(info);
     }
     return map;
   }, [ingredientList, expiryMap]);
@@ -554,7 +554,37 @@ export default function CategoryOriginManagement() {
                       {isExpanded && renderIngredientRows(ingredientsByCategory.get(cat.id) || [])}
                     </div>
                   );
-                })
+                }),
+                // Uncategorized group
+                ingredientsByCategory.has(-1) && (() => {
+                  const isExpanded = expandedCategories.has(-1);
+                  const items = ingredientsByCategory.get(-1) || [];
+                  const withExpiry = items.filter((i) => i.nearestExpiryDate !== null);
+                  const expired = withExpiry.filter((i) => getExpiryStatus(i) === "expired").length;
+                  const danger = withExpiry.filter((i) => getExpiryStatus(i) === "danger").length;
+                  const warning = withExpiry.filter((i) => getExpiryStatus(i) === "warning").length;
+                  const summary = { total: items.length, expired, danger, warning };
+                  return (
+                    <div key="uncategorized" data-testid="row-category-uncategorized">
+                      <div
+                        className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer border-t border-dashed border-border"
+                        onClick={() => toggleCategory(-1)}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <Tags className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                          <span className="font-medium text-muted-foreground italic">미분류</span>
+                          {renderSummaryBadges(summary)}
+                        </div>
+                      </div>
+                      {isExpanded && renderIngredientRows(items)}
+                    </div>
+                  );
+                })()
               )}
             </div>
           </div>
@@ -656,7 +686,37 @@ export default function CategoryOriginManagement() {
                       {isExpanded && renderIngredientRows(ingredientsByOrigin.get(origin.id) || [])}
                     </div>
                   );
-                })
+                }),
+                // Uncategorized origins
+                ingredientsByOrigin.has(-1) && (() => {
+                  const isExpanded = expandedOrigins.has(-1);
+                  const items = ingredientsByOrigin.get(-1) || [];
+                  const withExpiry = items.filter((i) => i.nearestExpiryDate !== null);
+                  const expired = withExpiry.filter((i) => getExpiryStatus(i) === "expired").length;
+                  const danger = withExpiry.filter((i) => getExpiryStatus(i) === "danger").length;
+                  const warning = withExpiry.filter((i) => getExpiryStatus(i) === "warning").length;
+                  const summary = { total: items.length, expired, danger, warning };
+                  return (
+                    <div key="uncategorized-origin" data-testid="row-origin-uncategorized">
+                      <div
+                        className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer border-t border-dashed border-border"
+                        onClick={() => toggleOrigin(-1)}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <Globe className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                          <span className="font-medium text-muted-foreground italic">미분류</span>
+                          {renderSummaryBadges(summary)}
+                        </div>
+                      </div>
+                      {isExpanded && renderIngredientRows(items)}
+                    </div>
+                  );
+                })()
               )}
             </div>
           </div>

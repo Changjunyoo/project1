@@ -19,7 +19,7 @@ import {
   ResponsiveContainer 
 } from "recharts";
 import { Package, AlertTriangle, ArrowUpRight, ShoppingCart, TrendingUp } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, startOfMonth, isAfter } from "date-fns";
 import { ko } from "date-fns/locale/ko";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -31,6 +31,10 @@ export default function Dashboard() {
   const totalIngredients = ingredients?.length || 0;
   const lowStockItems = ingredients?.filter(i => i.currentStock <= i.minStockLevel) || [];
   const recentTransactions = transactions?.slice(0, 5) || [];
+
+  // This month's transactions
+  const monthStart = startOfMonth(new Date());
+  const thisMonthTxs = transactions?.filter(tx => tx.createdAt && isAfter(new Date(tx.createdAt), monthStart)) || [];
 
   // Chart data: Top 5 ingredients by stock
   const chartData = ingredients
@@ -82,8 +86,8 @@ export default function Dashboard() {
               <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{transactions?.length || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">기록된 입출고 건수</p>
+              <div className="text-2xl font-bold">{thisMonthTxs.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">이번 달 입출고 건수</p>
             </CardContent>
           </Card>
         </div>

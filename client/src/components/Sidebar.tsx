@@ -288,10 +288,17 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-border/50">
-        <button className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-all">
-          <Settings className="w-5 h-5" />
-          설정
-        </button>
+        <Link href="/settings/categories">
+          <div className={cn(
+            "flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium transition-all cursor-pointer",
+            location === "/settings/categories"
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+          )}>
+            <Settings className="w-5 h-5" />
+            설정
+          </div>
+        </Link>
       </div>
     </div>
   );
