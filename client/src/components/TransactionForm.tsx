@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useIngredients, useCreateIngredient, useUpdateIngredient, useCreateTransaction, useBranches, useCategories, useOrigins } from "@/hooks/use-inventory";
+import { useIngredients, useCreateIngredient, useUpdateIngredient, useCreateTransaction, useBranches, useCategories, useOrigins, useCreateCategory, useCreateOrigin } from "@/hooks/use-inventory";
 import { createTransactionRequestSchema, insertIngredientSchema } from "@shared/schema";
+import { InlineAddableSelector } from "@/components/InlineAddableSelector";
 
 interface TransactionFormProps {
   type: "IN" | "OUT" | "PURCHASE";
@@ -43,6 +44,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
   const { data: branchList } = useBranches();
   const { data: categories } = useCategories();
   const { data: origins } = useOrigins();
+  const { mutateAsync: createCategory } = useCreateCategory();
+  const { mutateAsync: createOrigin } = useCreateOrigin();
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction();
   const { mutateAsync: createIngredient, isPending: isCreatingIngredient } = useCreateIngredient();
   const { mutateAsync: updateIngredient } = useUpdateIngredient();
@@ -67,7 +70,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     defaultValues: {
       type,
       ingredientId: preselectedIngredientId || undefined,
-      quantity: 0,
+      quantity: 1,
       unitPrice: (type === "IN" || type === "PURCHASE") ? 0 : undefined,
       destination: (type === "OUT" || type === "PURCHASE") ? (preselectedDestination || "") : undefined,
       supplier: type === "PURCHASE" ? "" : undefined,
@@ -78,7 +81,7 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
     try {
       const submitValues = { ...values };
       if ((type === "IN" || type === "PURCHASE") && selectedIngredient?.shelfLifeDays) {
-        submitValues.expiryDate = addDays(new Date(), selectedIngredient.shelfLifeDays);
+        submitValues.expiryDate = addDays(new Date(), selectedIngredient.shelfLifeDays).toISOString() as any;
       }
       await createTransaction(submitValues);
       setOpen(false);
@@ -284,28 +287,21 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                     </FormItem>
                   )}
                 />
-                <FormField
+              <FormField
                   control={newIngredientForm.control}
                   name="originId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>원산지</FormLabel>
                       <FormControl>
-                        <div className="flex gap-1 flex-wrap">
-                          {origins?.map((origin) => (
-                            <Button
-                              key={origin.id}
-                              type="button"
-                              variant={field.value === origin.id ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => field.onChange(origin.id)}
-                              data-testid={`button-new-origin-${origin.name}`}
-                              className="text-xs"
-                            >
-                              {origin.name}
-                            </Button>
-                          ))}
-                        </div>
+                        <InlineAddableSelector
+                          items={origins}
+                          selectedId={field.value ?? undefined}
+                          onSelect={(id) => field.onChange(id)}
+                          onAdd={async (name) => createOrigin({ name })}
+                          placeholder="원산지명"
+                          testIdPrefix="button-new-origin"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -319,21 +315,14 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                   <FormItem>
                     <FormLabel>카테고리</FormLabel>
                     <FormControl>
-                      <div className="flex gap-2">
-                        {categories?.map((cat) => (
-                          <Button
-                            key={cat.id}
-                            type="button"
-                            variant={field.value === cat.id ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => field.onChange(cat.id)}
-                            className="flex-1"
-                            data-testid={`button-new-cat-${cat.name}`}
-                          >
-                            {cat.name}
-                          </Button>
-                        ))}
-                      </div>
+                      <InlineAddableSelector
+                        items={categories}
+                        selectedId={field.value ?? undefined}
+                        onSelect={(id) => field.onChange(id)}
+                        onAdd={async (name) => createCategory({ name })}
+                        placeholder="카테고리명"
+                        testIdPrefix="button-new-cat"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

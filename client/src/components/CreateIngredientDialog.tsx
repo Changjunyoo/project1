@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCreateIngredient, useCategories, useOrigins } from "@/hooks/use-inventory";
+import { useCreateIngredient, useCategories, useOrigins, useCreateCategory, useCreateOrigin } from "@/hooks/use-inventory";
+import { InlineAddableSelector } from "@/components/InlineAddableSelector";
 import { insertIngredientSchema } from "@shared/schema";
 
 export function CreateIngredientDialog() {
@@ -29,6 +30,8 @@ export function CreateIngredientDialog() {
   const { mutateAsync: createIngredient, isPending } = useCreateIngredient();
   const { data: categories } = useCategories();
   const { data: origins } = useOrigins();
+  const { mutateAsync: createCategory } = useCreateCategory();
+  const { mutateAsync: createOrigin } = useCreateOrigin();
 
   const form = useForm<z.infer<typeof insertIngredientSchema>>({
     resolver: zodResolver(insertIngredientSchema),
@@ -105,21 +108,14 @@ export function CreateIngredientDialog() {
                 <FormItem>
                   <FormLabel>카테고리</FormLabel>
                   <FormControl>
-                    <div className="flex gap-2 flex-wrap">
-                      {categories?.map((cat) => (
-                        <Button
-                          key={cat.id}
-                          type="button"
-                          variant={field.value === cat.id ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => field.onChange(cat.id)}
-                          data-testid={`button-category-${cat.name}`}
-                          className="flex-1"
-                        >
-                          {cat.name}
-                        </Button>
-                      ))}
-                    </div>
+                    <InlineAddableSelector
+                      items={categories}
+                      selectedId={field.value ?? undefined}
+                      onSelect={(id) => field.onChange(id)}
+                      onAdd={async (name) => createCategory({ name })}
+                      placeholder="카테고리명"
+                      testIdPrefix="button-category"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -133,21 +129,14 @@ export function CreateIngredientDialog() {
                 <FormItem>
                   <FormLabel>원산지</FormLabel>
                   <FormControl>
-                    <div className="flex gap-2 flex-wrap">
-                      {origins?.map((origin) => (
-                        <Button
-                          key={origin.id}
-                          type="button"
-                          variant={field.value === origin.id ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => field.onChange(origin.id)}
-                          data-testid={`button-origin-${origin.name}`}
-                          className="flex-1"
-                        >
-                          {origin.name}
-                        </Button>
-                      ))}
-                    </div>
+                    <InlineAddableSelector
+                      items={origins}
+                      selectedId={field.value ?? undefined}
+                      onSelect={(id) => field.onChange(id)}
+                      onAdd={async (name) => createOrigin({ name })}
+                      placeholder="원산지명"
+                      testIdPrefix="button-origin"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

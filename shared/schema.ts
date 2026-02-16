@@ -108,6 +108,11 @@ export type IngredientWithNames = Ingredient & {
 export const createTransactionRequestSchema = insertTransactionSchema.extend({
   quantity: z.number().int().positive(),
   type: z.enum(["IN", "OUT", "PURCHASE"]),
+  expiryDate: z.union([z.string(), z.date(), z.null()]).optional().transform((val) => {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    return new Date(val);
+  }),
 });
 
 export type CreateTransactionRequest = z.infer<typeof createTransactionRequestSchema>;

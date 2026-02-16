@@ -107,6 +107,7 @@ export async function registerRoutes(
       res.status(201).json(transaction);
     } catch (err) {
       if (err instanceof z.ZodError) {
+        console.error("Transaction validation error:", JSON.stringify(err.errors, null, 2));
         return res.status(400).json({
           message: err.errors[0].message,
           field: err.errors[0].path.join('.'),
