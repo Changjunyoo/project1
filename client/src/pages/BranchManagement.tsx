@@ -1,8 +1,8 @@
 import { type ReactNode, type FormEvent } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { useBranches, useCreateBranch, useUpdateBranch, useDeleteBranch } from "@/hooks/use-inventory";
-import { useState } from "react";
-import { MapPin, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { useBranches, useCreateBranch, useUpdateBranch, useDeleteBranch, useTransactions, useIngredients } from "@/hooks/use-inventory";
+import { useState, useMemo } from "react";
+import { MapPin, Plus, Pencil, Trash2, Loader2, ArrowUpRight, Package } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -128,6 +128,27 @@ function BranchFormDialog({
 export default function BranchManagement() {
   const { data: branches, isLoading } = useBranches();
   const { mutate: deleteBranch } = useDeleteBranch();
+  const { data: transactions } = useTransactions();
+  const { data: ingredients } = useIngredients();
+
+  // Compute per-branch stats from OUT transactions
+  const branchStats = useMemo(() => {
+    if (!transactions || !branches) return new Map<string, { count: number; totalQty: number; uniqueItems: Set<number> }>();
+    const map = new Map<string, { count: number; totalQty: number; uniqueItems: Set<number> }>();
+    const outTxs = transactions.filter(tx => tx.type === "OUT" && tx.destination);
+    for (const tx of outTxs) {
+      const dest = tx.destination!;
+      if (!map.has(dest)) map.set(dest, { count: 0, totalQty: 0, uniqueItems: new Set() });
+      const entry = map.get(dest)!;
+      entry.count++;
+      entry.totalQty += tx.quantity;
+      entry.uniqueItems.add(tx.ingredientId);
+    }
+    return map;
+  }, [transactions, branches]);
+
+  const totalOutCount = transactions?.filter(tx => tx.type === "OUT").length || 0;
+  const activeBranches = branches?.filter(b => branchStats.has(b.name)).length || 0;
 
   return (
     <div className="flex bg-muted/20 min-h-screen">
@@ -156,6 +177,29 @@ export default function BranchManagement() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold" data-testid="text-branch-count">{branches?.length || 0}곳</div>
+              <p className="text-xs text-muted-foreground mt-1">활성 지점: {activeBranches}곳</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">총 출고 건수</CardTitle>
+              <ArrowUpRight className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalOutCount}건</div>
+              <p className="text-xs text-muted-foreground mt-1">전체 지점 출고 건수</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-1 pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">총 출고 품목</CardTitle>
+              <Package className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {new Set(transactions?.filter(tx => tx.type === "OUT").map(tx => tx.ingredientId) || []).size}개
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">출고된 고유 품목 수</p>
             </CardContent>
           </Card>
         </div>
@@ -167,14 +211,16 @@ export default function BranchManagement() {
                 <tr>
                   <th className="px-6 py-4">지점명</th>
                   <th className="px-6 py-4">주소</th>
+                  <th className="px-6 py-4 text-center">출고 건수</th>
+                  <th className="px-6 py-4 text-center">총 출고량</th>
                   <th className="px-6 py-4 text-right">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr><td colSpan={3} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
                 ) : !branches || branches.length === 0 ? (
-                  <tr><td colSpan={3} className="p-8 text-center text-muted-foreground">등록된 지점이 없습니다. 새 지점을 추가해 주세요.</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">등록된 지점이 없습니다. 새 지점을 추가해 주세요.</td></tr>
                 ) : (
                   branches.map((branch) => (
                     <tr key={branch.id} className="hover:bg-muted/30 transition-colors" data-testid={`row-branch-${branch.id}`}>
@@ -185,6 +231,12 @@ export default function BranchManagement() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">{branch.address || "-"}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-medium">{branchStats.get(branch.name)?.count || 0}건</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="font-medium">{branchStats.get(branch.name)?.totalQty || 0}</span>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-1">
                           <BranchFormDialog
