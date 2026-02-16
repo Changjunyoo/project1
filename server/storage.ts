@@ -221,6 +221,8 @@ export class DatabaseStorage implements IStorage {
     if (updates.destination !== undefined) setValues.destination = updates.destination;
     if (updates.unitPrice !== undefined) setValues.unitPrice = updates.unitPrice;
     if (updates.supplier !== undefined) setValues.supplier = updates.supplier;
+    if (updates.department !== undefined) setValues.department = updates.department;
+    if (updates.personName !== undefined) setValues.personName = updates.personName;
     if (updates.expiryDate !== undefined) setValues.expiryDate = updates.expiryDate;
     if (updates.createdAt !== undefined) setValues.createdAt = updates.createdAt;
 

@@ -30,6 +30,8 @@ interface EditState {
   unitPrice: number | "" | null;
   destination: string;
   supplier: string;
+  department: string;
+  personName: string;
 }
 
 export default function IngredientDetail() {
@@ -51,6 +53,8 @@ export default function IngredientDetail() {
       unitPrice: tx.unitPrice ?? null,
       destination: tx.destination || "",
       supplier: tx.supplier || "",
+      department: tx.department || "",
+      personName: tx.personName || "",
     });
   };
 
@@ -74,6 +78,8 @@ export default function IngredientDetail() {
     if (tx.type === "PURCHASE") {
       payload.supplier = editingTx.supplier || undefined;
     }
+    payload.department = editingTx.department || undefined;
+    payload.personName = editingTx.personName || undefined;
 
     try {
       await updateTransaction(payload as any);
@@ -335,6 +341,24 @@ export default function IngredientDetail() {
                                   />
                                 </div>
                               )}
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground">부서:</span>
+                                <Input
+                                  value={editingTx.department}
+                                  onChange={(e) => setEditingTx({ ...editingTx, department: e.target.value })}
+                                  className="h-7 w-24 text-xs" placeholder="부서"
+                                  onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground">담당자:</span>
+                                <Input
+                                  value={editingTx.personName}
+                                  onChange={(e) => setEditingTx({ ...editingTx, personName: e.target.value })}
+                                  className="h-7 w-24 text-xs" placeholder="담당자"
+                                  onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -397,6 +421,12 @@ export default function IngredientDetail() {
                           )}
                           {tx.expiryDate && (
                             <p className="text-xs text-muted-foreground">유통기한: {format(new Date(tx.expiryDate), "yyyy-MM-dd")}</p>
+                          )}
+                          {tx.department && (
+                            <p className="text-xs text-muted-foreground">부서: {tx.department}</p>
+                          )}
+                          {tx.personName && (
+                            <p className="text-xs text-muted-foreground">담당자: {tx.personName}</p>
                           )}
                         </div>
                         {canEdit && (

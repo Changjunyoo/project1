@@ -62,7 +62,9 @@ export default function TransactionsList() {
     return (
       (ingredient?.name || "").toLowerCase().includes(term) ||
       (tx.destination || "").toLowerCase().includes(term) ||
-      (tx.supplier || "").toLowerCase().includes(term)
+      (tx.supplier || "").toLowerCase().includes(term) ||
+      (tx.department || "").toLowerCase().includes(term) ||
+      (tx.personName || "").toLowerCase().includes(term)
     );
   });
 
@@ -347,6 +349,35 @@ export default function TransactionsList() {
                                   />
                                 </div>
                               )}
+                              {/* Department & Person */}
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">부서:</span>
+                                <Input
+                                  value={editingTx.department}
+                                  onChange={(e) => setEditingTx({ ...editingTx, department: e.target.value })}
+                                  className="h-7 w-24 text-xs"
+                                  placeholder="부서"
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveEdit();
+                                    if (e.key === "Escape") cancelEdit();
+                                  }}
+                                  data-testid={`input-edit-department-${tx.id}`}
+                                />
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">담당자:</span>
+                                <Input
+                                  value={editingTx.personName}
+                                  onChange={(e) => setEditingTx({ ...editingTx, personName: e.target.value })}
+                                  className="h-7 w-24 text-xs"
+                                  placeholder="담당자"
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveEdit();
+                                    if (e.key === "Escape") cancelEdit();
+                                  }}
+                                  data-testid={`input-edit-person-${tx.id}`}
+                                />
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-3 text-right">
@@ -417,6 +448,12 @@ export default function TransactionsList() {
                             )}
                             {tx.expiryDate && (
                               <span>유통기한: {format(new Date(tx.expiryDate), "yyyy-MM-dd")}</span>
+                            )}
+                            {tx.department && (
+                              <span>부서: {tx.department}</span>
+                            )}
+                            {tx.personName && (
+                              <span>담당자: {tx.personName}</span>
                             )}
                           </div>
                         </td>

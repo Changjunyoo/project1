@@ -77,6 +77,8 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
       unitPrice: (type === "IN" || type === "PURCHASE") ? 0 : undefined,
       destination: (type === "OUT" || type === "PURCHASE") ? (preselectedDestination || "") : undefined,
       supplier: type === "PURCHASE" ? "" : undefined,
+      department: "",
+      personName: "",
     },
   });
 
@@ -737,6 +739,46 @@ export function TransactionForm({ type, preselectedIngredientId, preselectedDest
                 )}
               />
             )}
+
+            {/* Department & Person Name */}
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="department"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>부서</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="예: 주방, 홀" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        data-testid="input-department"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="personName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>담당자</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="예: 홍길동" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        data-testid="input-person-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isPending} data-testid="button-submit-transaction" className={type === "IN" ? "bg-green-600" : type === "PURCHASE" ? "bg-blue-600" : "bg-orange-600"}>

@@ -216,14 +216,16 @@ export default function Purchases() {
                   <th className="px-6 py-4">합계</th>
                   <th className="px-6 py-4">사입처</th>
                   <th className="px-6 py-4">배송 지점</th>
+                  <th className="px-6 py-4">부서</th>
+                  <th className="px-6 py-4">담당자</th>
                   <th className="px-6 py-4">배송 확인</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+                  <tr><td colSpan={12} className="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
                 ) : filteredTransactions.length === 0 ? (
-                  <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">등록된 사입 내역이 없습니다.</td></tr>
+                  <tr><td colSpan={12} className="p-8 text-center text-muted-foreground">등록된 사입 내역이 없습니다.</td></tr>
                 ) : (
                   filteredTransactions.map((tx) => {
                     const ingredient = ingredients?.find(i => i.id === tx.ingredientId);
@@ -257,6 +259,12 @@ export default function Purchases() {
                         </td>
                         <td className="px-6 py-4 text-muted-foreground">
                           {tx.destination || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {tx.department || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {tx.personName || "-"}
                         </td>
                         <td className="px-6 py-4">
                           {(tx.confirmed === "PENDING" || tx.confirmed === null || tx.confirmed === undefined) ? (
@@ -337,7 +345,7 @@ export default function Purchases() {
                     <td className="px-6 py-3 font-bold text-blue-600">
                       &#8361;{filteredTransactions.reduce((s, tx) => s + (tx.quantity * (tx.unitPrice || 0)), 0).toLocaleString()}
                     </td>
-                    <td colSpan={3}></td>
+                    <td colSpan={5}></td>
                   </tr>
                 </tfoot>
               )}

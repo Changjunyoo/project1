@@ -47,6 +47,8 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
   unitPrice: integer("unit_price"),
   destination: text("destination"),
   supplier: text("supplier"),
+  department: text("department"),
+  personName: text("person_name"),
   expiryDate: timestamp("expiry_date"),
   confirmed: text("confirmed"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -115,6 +117,8 @@ const dateOrString = z.union([z.string(), z.date(), z.null()]).optional().transf
 export const createTransactionRequestSchema = insertTransactionSchema.extend({
   quantity: z.number().int().positive(),
   type: z.enum(["IN", "OUT", "PURCHASE"]),
+  department: z.string().optional().nullable(),
+  personName: z.string().optional().nullable(),
   expiryDate: dateOrString,
   createdAt: dateOrString,
 });
@@ -126,6 +130,8 @@ export const updateTransactionSchema = z.object({
   destination: z.string().optional(),
   unitPrice: z.number().int().min(0).optional().nullable(),
   supplier: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
+  personName: z.string().optional().nullable(),
   expiryDate: dateOrString,
   createdAt: dateOrString,
 });
