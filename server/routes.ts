@@ -299,8 +299,13 @@ export async function registerRoutes(
 
   // Department Routes
   app.get(api.departments.list.path, async (req, res) => {
-    const depts = await storage.getDepartments();
-    res.json(depts);
+    try {
+      const depts = await storage.getDepartments();
+      res.json(depts);
+    } catch (err) {
+      console.error("Failed to fetch departments:", err);
+      res.json([]);
+    }
   });
 
   app.post(api.departments.create.path, async (req, res) => {
@@ -324,8 +329,13 @@ export async function registerRoutes(
 
   // Person Routes
   app.get(api.persons.list.path, async (req, res) => {
-    const ppl = await storage.getPersons();
-    res.json(ppl);
+    try {
+      const ppl = await storage.getPersons();
+      res.json(ppl);
+    } catch (err) {
+      console.error("Failed to fetch persons:", err);
+      res.json([]);
+    }
   });
 
   app.post(api.persons.create.path, async (req, res) => {
