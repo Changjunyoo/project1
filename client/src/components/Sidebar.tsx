@@ -41,8 +41,20 @@ const defaultLinks: NavLink[] = [
 const ORDER_KEY = "kitchenos-sidebar-order";
 const LABELS_KEY = "kitchenos-sidebar-labels";
 
+const SIDEBAR_VERSION_KEY = "kitchenos-sidebar-version";
+const CURRENT_SIDEBAR_VERSION = "2"; // bump this when adding/removing menu items
+
 function loadLinks(): NavLink[] {
   try {
+    // If menu structure changed, clear old cached order
+    const savedVersion = localStorage.getItem(SIDEBAR_VERSION_KEY);
+    if (savedVersion !== CURRENT_SIDEBAR_VERSION) {
+      localStorage.removeItem(ORDER_KEY);
+      localStorage.removeItem(LABELS_KEY);
+      localStorage.setItem(SIDEBAR_VERSION_KEY, CURRENT_SIDEBAR_VERSION);
+      return defaultLinks;
+    }
+
     const savedOrder = localStorage.getItem(ORDER_KEY);
     const savedLabels = localStorage.getItem(LABELS_KEY);
     const labels: Record<string, string> = savedLabels ? JSON.parse(savedLabels) : {};
