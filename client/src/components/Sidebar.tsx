@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Package, ArrowRightLeft, Settings, ChefHat, ShoppingCart, MapPin, Building2, GripVertical, Pencil, Check, X, Tags, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, Package, ArrowRightLeft, Settings, ChefHat, ShoppingCart, MapPin, Building2, GripVertical, Pencil, Check, X, Tags, FileSpreadsheet, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,13 +37,14 @@ const defaultLinks: NavLink[] = [
   { id: "categories", href: "/settings/categories", label: "카테고리/원산지", icon: Tags },
   { id: "transactions", href: "/transactions", label: "입출고 내역", icon: ArrowRightLeft },
   { id: "reports", href: "/reports", label: "리포트/엑셀", icon: FileSpreadsheet },
+  { id: "ai", href: "/ai", label: "AI 자동 입출고", icon: Sparkles },
 ];
 
 const ORDER_KEY = "kitchenos-sidebar-order";
 const LABELS_KEY = "kitchenos-sidebar-labels";
 
 const SIDEBAR_VERSION_KEY = "kitchenos-sidebar-version";
-const CURRENT_SIDEBAR_VERSION = "3"; // bump this when adding/removing menu items
+const CURRENT_SIDEBAR_VERSION = "4"; // bump this when adding/removing menu items
 
 function loadLinks(): NavLink[] {
   try {
