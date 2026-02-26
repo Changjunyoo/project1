@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { useIngredients, useTransactions } from "@/hooks/use-inventory";
 import { format } from "date-fns";
@@ -614,7 +614,7 @@ export default function Reports() {
                   {reportData.map((r) => {
                     let running = r.stockAtStart;
                     return (
-                      <>{/* Fragment key on ingredient */}
+                      <React.Fragment key={r.ingredient.id}>
                         {/* Starting stock row */}
                         <tr key={`start-${r.ingredient.id}`} className="bg-muted/20">
                           <td className="px-4 py-2 font-bold">{r.ingredient.name}</td>
@@ -691,7 +691,7 @@ export default function Reports() {
                           <td className="px-4 py-2">-</td>
                           <td className="px-4 py-2">-</td>
                         </tr>
-                      </>
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
