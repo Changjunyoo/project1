@@ -3,6 +3,8 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import multer from "multer";
+import { analyzeImage } from "./gemini";
 
 async function seedDatabase() {
   const ingredients = await storage.getIngredients();
@@ -355,6 +357,100 @@ export async function registerRoutes(
     const id = Number(req.params.id);
     await storage.deletePerson(id);
     res.status(204).send();
+  });
+
+  // === AI Image Analysis Routes ===
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype.startsWith("image/")) {
+        cb(null, true);
+      } else {
+        cb(new Error("이미지 파일만 업로드 가능합니다."));
+      }
+    },
+  });
+
+  // POST /api/ai/analyze — Upload image and get parsed inventory data
+  app.post("/api/ai/analyze", upload.single("image"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "이미지 파일이 필요합니다." });
+      }
+
+      const userHint = req.body?.hint || "";
+      const result = await analyzeImage(req.file.buffer, req.file.mimetype, userHint);
+      res.json(result);
+    } catch (err) {
+      console.error("AI analysis error:", err);
+      const message = err instanceof Error ? err.message : "AI 분석 중 오류가 발생했습니다.";
+      res.status(500).json({ message });
+    }
+  });
+
+  // POST /api/ai/apply — Apply parsed items as transactions
+  app.post("/api/ai/apply", async (req, res) => {
+    try {
+      const { items } = req.body;
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: "적용할 항목이 없습니다." });
+      }
+
+      const results: any[] = [];
+
+      for (const item of items) {
+        let ingredientId = item.matchedIngredientId;
+
+        // Create new ingredient if needed
+        if (!ingredientId && item.isNew) {
+          const newIng = await storage.createIngredient({
+            name: item.name,
+            unit: item.unit,
+            brand: null,
+            categoryId: null,
+            originId: null,
+            minStockLevel: 10,
+            shelfLifeDays: null,
+          });
+          ingredientId = newIng.id;
+        }
+
+        if (!ingredientId) {
+          results.push({ name: item.name, status: "skipped", reason: "매칭된 식자재 없음" });
+          continue;
+        }
+
+        // Build transaction creation date with current time
+        const now = new Date();
+        const createdAt = now.toISOString();
+
+        try {
+          const tx = await storage.createTransaction({
+            ingredientId,
+            type: item.type,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice || null,
+            destination: item.destination || null,
+            supplier: item.supplier || null,
+            department: item.department || null,
+            personName: item.personName || null,
+            expiryDate: null,
+            confirmed: item.type === "PURCHASE" ? "PENDING" : null,
+            createdAt: new Date(createdAt),
+          });
+          results.push({ name: item.name, status: "success", transactionId: tx.id });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Unknown error";
+          results.push({ name: item.name, status: "error", reason: msg });
+        }
+      }
+
+      res.json({ results });
+    } catch (err) {
+      console.error("AI apply error:", err);
+      res.status(500).json({ message: "트랜잭션 적용 중 오류가 발생했습니다." });
+    }
   });
 
   return httpServer;
